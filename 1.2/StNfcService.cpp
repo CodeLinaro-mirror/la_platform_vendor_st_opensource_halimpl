@@ -34,6 +34,11 @@ using android::hardware::nfc::V1_2::implementation::Nfc;
 
 int main() {
   ALOGD(" ST NFC HAL Service 1.2 is starting.");
+  // Not registering the HAL service when device node is not present
+  if (access("/dev/st21nfc",F_OK)!=0) {
+    configureRpcThreadpool(0, false /*callerWillJoin*/);
+    joinRpcThreadpool();
+  }
   sp<INfc> nfc_service = new Nfc();
 
   configureRpcThreadpool(1, true /*callerWillJoin*/);
