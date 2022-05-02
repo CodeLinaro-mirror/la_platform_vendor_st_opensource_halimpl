@@ -25,6 +25,7 @@
 #include <hidl/Status.h>
 #include <log/log.h>
 #include <pthread.h>
+#include <inttypes.h>
 
 namespace android {
 namespace hardware {
@@ -99,7 +100,7 @@ struct Nfc : public V1_2::INfc, public hidl_death_recipient {
 
   virtual void serviceDied(uint64_t cookie, const wp<IBase>& /*who*/) {
     pthread_mutex_lock(&mLockOpenClose);
-    ALOGE("serviceDied!!! %ld, %ld, %s, %s", cookie, mOpenCount,
+    ALOGE("serviceDied!!! %" PRIu64 ", %" PRIu64 ", %s, %s", cookie, mOpenCount,
           (mCallbackV1_0 == nullptr ? "null" : "defined"),
           (mCallbackV1_1 == nullptr ? "null" : "defined"));
     if (cookie == mOpenCount) {
@@ -121,8 +122,8 @@ struct Nfc : public V1_2::INfc, public hidl_death_recipient {
  private:
   static sp<V1_1::INfcClientCallback> mCallbackV1_1;
   static sp<V1_0::INfcClientCallback> mCallbackV1_0;
-  pthread_mutex_t mLockOpenClose;
-  uint64_t mOpenCount;
+  static pthread_mutex_t mLockOpenClose;
+  static uint64_t mOpenCount;
 };
 
 }  // namespace implementation

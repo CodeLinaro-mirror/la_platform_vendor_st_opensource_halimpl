@@ -100,6 +100,7 @@ void DispHal(const char* title, const void* data, size_t length) {
   line[0] = 0;
   if (length == 0) {
     STLOG_HAL_D("%s", title);
+    pthread_mutex_unlock(&halLogMutex);
     return;
   }
   for (i = 0, k = 0; i < (privacy ? 3 : length); i++, k++) {

@@ -25,6 +25,7 @@
 #include <string.h>
 #include "android_logmsg.h"
 #include "halcore_private.h"
+#include "st21nfc_dev.h"
 
 extern int I2cWriteCmd(const uint8_t* x, size_t len);
 extern void DispHal(const char* title, const void* data, size_t length);
@@ -33,14 +34,6 @@ extern uint32_t ScrProtocolTraceFlag;  // = SCR_PROTO_TRACE_ALL;
 
 // HAL WRAPPER
 static void HalStopTimer(HalInstance* inst);
-
-typedef struct {
-  struct nfc_nci_device nci_device;  // nci_device must be first struct member
-  // below declarations are private variables within HAL
-  nfc_stack_callback_t* p_cback;
-  nfc_stack_data_callback_t* p_data_cback;
-  HALHANDLE hHAL;
-} st21nfc_dev_t;  // beware, is a duplication of structure in nfc_nci_st21nfc.c
 
 /**************************************************************************************************
  *
@@ -246,6 +239,7 @@ void HalDestroy(HALHANDLE hHAL) {
   msg.command = MSG_EXIT_REQUEST;
   msg.payload = 0;
   msg.length = 0;
+  msg.buffer = NULL;
 
   HalEnqueueThreadMessage(inst, &msg);
 
@@ -384,6 +378,7 @@ bool HalSendUpstream(HALHANDLE hHAL, const uint8_t* data, size_t size) {
     msg.command = MSG_RX_DATA;
     msg.payload = data;
     msg.length = size;
+    msg.buffer = NULL;
 
     if (HalEnqueueThreadMessage(inst, &msg)) {
       // Block until the protocol has taken a copy of the data

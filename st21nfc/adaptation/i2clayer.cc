@@ -45,8 +45,6 @@
 #define ST21NFC_SET_POLARITY_HIGH _IOR(ST21NFC_MAGIC, 0x05, unsigned int)
 #define ST21NFC_SET_POLARITY_LOW _IOR(ST21NFC_MAGIC, 0x06, unsigned int)
 
-#define ST21NFC_CLK_DISABLE_UNPREPARE _IO(ST21NFC_MAGIC, 0x0A)
-
 /*
 #define ST21NFC_GET_WAKEUP _IO(ST21NFC_MAGIC, 0x01)
 #define ST21NFC_PULSE_RESET _IO(ST21NFC_MAGIC, 0x02)
@@ -216,7 +214,7 @@ static void* I2cWorkerThread(void* arg) {
                     bytesRead, remaining, extra, is4bytesheader);
               }
             } else {
-              STLOG_HAL_E(
+              STLOG_HAL_W(
                   "!readOk; bytesRead=%d, buffer: 0x%02x 0x%02x 0x%02x\n",
                   bytesRead, buffer[0], buffer[1], buffer[2]);
             }
@@ -236,14 +234,15 @@ static void* I2cWorkerThread(void* arg) {
       STLOG_HAL_V("thread received command.. \n");
 
       char cmd = 0;
-      read(cmdPipe[0], &cmd, 1);
+      int ret = read(cmdPipe[0], &cmd, 1);
+      if (ret != 1) {
+        STLOG_HAL_E("! Error, wrong read size\n");
+        continue;
+      }
 
       switch (cmd) {
         case 'X':
           STLOG_HAL_D("received close command\n");
-          if (-1 == ioctl(fidI2c, ST21NFC_CLK_DISABLE_UNPREPARE, NULL)) {
-            STLOG_HAL_E("ioctl(ST21NFC_CLK_DISABLE_UNPREPARE) failed\n");
-          }
           closeThread = true;
           break;
 
@@ -251,7 +250,11 @@ static void* I2cWorkerThread(void* arg) {
           size_t length;
           uint8_t buffer[MAX_BUFFER_SIZE];
           STLOG_HAL_V("received write command\n");
-          read(cmdPipe[0], &length, sizeof(length));
+          int ret = read(cmdPipe[0], &length, sizeof(length));
+          if (ret != sizeof(length)) {
+            STLOG_HAL_E("! Error, wrong read size\n");
+            break;
+          }
           if (length <= MAX_BUFFER_SIZE) {
             read(cmdPipe[0], buffer, length);
             i2cWrite(fidI2c, buffer, length);
@@ -515,7 +518,11 @@ redo:
       char msg[LINUX_DBGBUFFER_SIZE];
 
       strerror_r(errno, msg, LINUX_DBGBUFFER_SIZE);
-      STLOG_HAL_W("! i2cWrite!!, errno is '%s'", msg);
+      if (retries > 0) {
+        STLOG_HAL_W("! i2cWrite!!, errno is '%s'", msg);
+      } else {
+        STLOG_HAL_D("! i2cWrite!!, errno is '%s'", msg);
+      }
       usleep(4000);
       retries++;
     } else if (result > 0) {

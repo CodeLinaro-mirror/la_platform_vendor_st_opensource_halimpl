@@ -35,8 +35,8 @@ namespace implementation {
 
 sp<V1_1::INfcClientCallback> Nfc::mCallbackV1_1 = nullptr;
 sp<V1_0::INfcClientCallback> Nfc::mCallbackV1_0 = nullptr;
-pthread_mutex_t mLockOpenClose = PTHREAD_MUTEX_INITIALIZER;
-uint64_t mOpenCount = 0;
+pthread_mutex_t Nfc::mLockOpenClose = PTHREAD_MUTEX_INITIALIZER;
+uint64_t Nfc::mOpenCount = 0;
 
 Return<V1_0::NfcStatus> Nfc::open_1_1(
     const sp<V1_1::INfcClientCallback>& clientCallback) {
@@ -69,7 +69,7 @@ Return<V1_0::NfcStatus> Nfc::open(
   }
 
   int ret = StNfc_hal_open(eventCallback, dataCallback);
-  ALOGD_IF(nfc_debug_enabled, "Nfc::open Exit (count:%ld)", mOpenCount);
+  ALOGD_IF(nfc_debug_enabled, "Nfc::open Exit (count:%" PRIu64 ")", mOpenCount);
   pthread_mutex_unlock(&mLockOpenClose);
   return ret == 0 ? V1_0::NfcStatus::OK : V1_0::NfcStatus::FAILED;
 }

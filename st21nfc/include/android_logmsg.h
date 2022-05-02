@@ -38,7 +38,8 @@ extern int GetByteArrayValue(const char* name, char* pValue, long bufflen,
                              long* len);
 extern int GetStrValue(const char* name, char* pValue, unsigned long l);
 
-extern char config_name_suffix[30];
+#define MAX_DATA_CONFIG_PATH_LEN 64
+extern char config_name_suffix[MAX_DATA_CONFIG_PATH_LEN];
 
 /* #######################
  * Set the log module name in .conf file
@@ -51,6 +52,7 @@ extern char config_name_suffix[30];
 #define NAME_STNFC_FW_CONF_NAME "STNFC_FW_CONF_NAME"
 #define NAME_STNFC_FW_DEBUG_ENABLED "STNFC_FW_DEBUG_ENABLED"
 #define NAME_CORE_CONF_PROP "CORE_CONF_PROP"
+#define NAME_NDEF_NFCEE_ENABLE "NDEF_NFCEE_ENABLE"
 
 /* #######################
  * Set the logging level
