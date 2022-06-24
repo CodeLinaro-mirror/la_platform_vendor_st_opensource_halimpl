@@ -64,6 +64,7 @@ typedef enum {
 #define FU_UPDATE_FW 2
 #define FU_UPDATE_PARAMS 3
 #define FU_ERROR 4
+#define FU_AUTH 5
 
 #define MAX_BUFFER_SIZE 300
 

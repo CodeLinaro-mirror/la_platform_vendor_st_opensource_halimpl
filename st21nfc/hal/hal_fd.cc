@@ -26,6 +26,8 @@
 #include <sys/stat.h>
 #include "android_logmsg.h"
 #include "halcore.h"
+#include "hal_auth.h"
+
 /* Initialize fw info structure pointer used to access fw info structure */
 FWInfo *mFWInfo = NULL;
 FILE *mFwFileBin;
@@ -77,8 +79,7 @@ const char *loader_patch_size_tab;
 uint8_t *pCmdLd;
 int ld_count = 0;
 
-#define MAX_DATA_CONFIG_PATH_LEN 64
-char config_name_suffix[30];
+char config_name_suffix[MAX_DATA_CONFIG_PATH_LEN];
 
 extern const int loader_RA7_patch_version;
 extern const int loader_RA7_patch_cmd_nb;
@@ -237,11 +238,18 @@ static void hal_fd_load_files() {
   } else {
     STLOG_HAL_D("%s - %s file detected\n", __func__, fwBinName);
 
-    fread(mBinData, sizeof(uint8_t), 4, mFwFileBin);
+    int ret = fread(mBinData, sizeof(uint8_t), 4, mFwFileBin);
+    if (ret != 4) {
+      STLOG_HAL_E("%s Wrong read nb\n", __func__);
+    }
     mFWInfo->fileFwVersion =
         mBinData[0] << 24 | mBinData[1] << 16 | mBinData[2] << 8 | mBinData[3];
 
-    fread(mApduAuthent, sizeof(uint8_t), 24, mFwFileBin);
+    ret = fread(mApduAuthent, sizeof(uint8_t), 24, mFwFileBin);
+    if (ret != 24) {
+      STLOG_HAL_E("%s Wrong read nb\n", __func__);
+    }
+
     // We use the last byte of the auth command to discriminate at the moment.
     // it can be extended in case of conflict later.
     switch (mApduAuthent[23]) {
@@ -364,6 +372,8 @@ void hal_fd_close() {
  */
 
 uint8_t ft_cmd_HwReset(uint8_t *pdata, uint8_t *clf_mode, bool force) {
+  bool params_needed = false;
+  bool auth_requested = false;
   STLOG_HAL_D("  %s - execution", __func__);
 
   // parse the CORE_RESET_NTF firstly.
@@ -528,9 +538,25 @@ uint8_t ft_cmd_HwReset(uint8_t *pdata, uint8_t *clf_mode, bool force) {
   if ((mFWInfo->fileCustVersion != 0) &&
       (mFWInfo->chipCustVersion != mFWInfo->fileCustVersion) &&
       (mFWInfo->chipCustVersion != 0xEFAC /* DTA */)) {
+    if (mCustomParamFailed) {
+      STLOG_HAL_D("%s - Parameters update needed but failed\n", __func__);
+      return FU_ERROR;
+    }
+    params_needed = true;
+  }
+
+  auth_requested = AuthCheckCoreResetNtf(pdata, params_needed);
+  if (auth_requested) {
+    STLOG_HAL_D("%s - Need to chech AUTH status\n", __func__);
+    return FU_AUTH;
+  } else {
+    // We can unload the library, no further calls will be made.
+    AuthCheckUnload();
+  }
+  if (params_needed) {
     STLOG_HAL_D("%s - Need to apply new custom configuration settings\n",
                 __func__);
-    return (mCustomParamFailed) ? FU_ERROR : FU_UPDATE_PARAMS;
+    return FU_UPDATE_PARAMS;
   }
 
   STLOG_HAL_D("%s - Nothing to do\n", __func__);
@@ -704,15 +730,9 @@ void LdUpdateHandler(HALHANDLE mHalHandle, uint16_t data_len, uint8_t *p_data) {
       break;
 
     case HAL_FD_STATE_EXIT_APDU:  // 2
-      if ((p_data[data_len - 2] == 0x90) && (p_data[data_len - 1] == 0x00)) {
-        I2cResetPulse();
-        hal_wrapper_set_state(HAL_WRAPPER_STATE_OPEN);
-        mHalFDState = HAL_FD_STATE_AUTHENTICATE;
-      } else {
-        I2cResetPulse();
-        hal_wrapper_set_state(HAL_WRAPPER_STATE_OPEN);
-        mHalFDState = HAL_FD_STATE_AUTHENTICATE;
-      }
+      I2cResetPulse();
+      hal_wrapper_set_state(HAL_WRAPPER_STATE_OPEN);
+      mHalFDState = HAL_FD_STATE_AUTHENTICATE;
       break;
 
     default:
@@ -976,6 +996,7 @@ void ApplyCustomParamHandler(HALHANDLE mHalHandle, uint16_t data_len,
             // CORE_INIT_RSP
           } else if (mFWInfo->hibernate_exited == 1) {
             if (getNextCommandInTxt(txtCmd, &txtCmdLen)) {
+              AuthCheckConfigCommand(txtCmd, txtCmdLen);
               if (!HalSendDownstream(mHalHandle, txtCmd, txtCmdLen)) {
                 STLOG_HAL_E("NFC-NCI HAL: %s  SendDownstream failed", __func__);
               }
@@ -1002,6 +1023,7 @@ void ApplyCustomParamHandler(HALHANDLE mHalHandle, uint16_t data_len,
               STLOG_HAL_E("NFC-NCI HAL: %s  SendDownstream failed", __func__);
             }
           } else if (getNextCommandInTxt(txtCmd, &txtCmdLen)) {
+            AuthCheckConfigCommand(txtCmd, txtCmdLen);
             if (!HalSendDownstream(mHalHandle, txtCmd, txtCmdLen)) {
               STLOG_HAL_E("NFC-NCI HAL: %s  SendDownstream failed", __func__);
             }
@@ -1045,9 +1067,10 @@ void ApplyCustomParamHandler(HALHANDLE mHalHandle, uint16_t data_len,
             }
             // CORE_INIT_RSP
           } else if (mFWInfo->hibernate_exited == 1) {
-            if ((fread(mBinData, sizeof(uint8_t), 3, mCustomFileBin)) &&
+            if ((fread(mBinData, sizeof(uint8_t), 3, mCustomFileBin) == 3) &&
                 (fread(mBinData + 3, sizeof(uint8_t), mBinData[2],
-                       mCustomFileBin))) {
+                       mCustomFileBin) == mBinData[2])) {
+              AuthCheckConfigCommand(mBinData, mBinData[2] + 3);
               if (!HalSendDownstream(mHalHandle, mBinData, mBinData[2] + 3)) {
                 STLOG_HAL_E("%s - SendDownstream failed", __func__);
               }
@@ -1067,6 +1090,7 @@ void ApplyCustomParamHandler(HALHANDLE mHalHandle, uint16_t data_len,
           if ((fread(mBinData, sizeof(uint8_t), 3, mCustomFileBin) == 3) &&
               (fread(mBinData + 3, sizeof(uint8_t), mBinData[2],
                      mCustomFileBin) == mBinData[2])) {
+            AuthCheckConfigCommand(mBinData, mBinData[2] + 3);
             if (!HalSendDownstream(mHalHandle, mBinData, mBinData[2] + 3)) {
               STLOG_HAL_E("%s - SendDownstream failed", __func__);
             }

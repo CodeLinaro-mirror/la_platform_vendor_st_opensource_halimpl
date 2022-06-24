@@ -21,6 +21,7 @@ cc_library_shared{
   export_include_dirs : [
     "include",
     "gki/ulinux",
+    "hal",
   ],
 
   whole_static_libs : [
@@ -59,6 +60,7 @@ name:
         "hal/halcore.cc",
         "hal_wrapper.cc",
         "hal/hal_fd.cc",
+        "hal/hal_auth.cc",
         "hal/loader_st21nfcd_RA7.c",
         "hal/loader_st21nfcd_RA9.c",
       ],

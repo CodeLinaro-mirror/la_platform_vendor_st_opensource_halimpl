@@ -48,7 +48,6 @@ bool mAscii;
 
 #define MAX_SOC_INFO_NAME_LEN (15)
 #define MAX_SUFFIX_NAME_LEN (30)
-#define MAX_DATA_CONFIG_PATH_LEN 64
 
 using namespace ::std;
 
@@ -445,7 +444,7 @@ bool CNfcConfig::readConfig(const char* name, bool bResetContent) {
 ** Returns:     none
 **
 *******************************************************************************/
-CNfcConfig::CNfcConfig() : mValidFile(true) {}
+CNfcConfig::CNfcConfig() : mValidFile(true), state(0) {}
 
 /*******************************************************************************
 **
