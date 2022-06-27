@@ -45,6 +45,8 @@
 #define ST21NFC_SET_POLARITY_HIGH _IOR(ST21NFC_MAGIC, 0x05, unsigned int)
 #define ST21NFC_SET_POLARITY_LOW _IOR(ST21NFC_MAGIC, 0x06, unsigned int)
 
+#define ST21NFC_CLK_DISABLE_UNPREPARE _IO(ST21NFC_MAGIC, 0x0A)
+
 /*
 #define ST21NFC_GET_WAKEUP _IO(ST21NFC_MAGIC, 0x01)
 #define ST21NFC_PULSE_RESET _IO(ST21NFC_MAGIC, 0x02)
@@ -243,6 +245,9 @@ static void* I2cWorkerThread(void* arg) {
       switch (cmd) {
         case 'X':
           STLOG_HAL_D("received close command\n");
+          if (-1 == ioctl(fidI2c, ST21NFC_CLK_DISABLE_UNPREPARE, NULL)) {
+            STLOG_HAL_E("ioctl(ST21NFC_CLK_DISABLE_UNPREPARE) failed\n");
+          }
           closeThread = true;
           break;
 
