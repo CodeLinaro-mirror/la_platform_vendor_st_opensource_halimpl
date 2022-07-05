@@ -27,6 +27,8 @@
 #include <string>
 #include <vector>
 #include "android_logmsg.h"
+#include "phNfcDynamicProtection.h"
+
 const char alternative_config_path[] = "";
 const char* transport_config_paths[] = {"/odm/etc/", "/vendor/etc/", "/etc/"};
 
@@ -476,6 +478,21 @@ int CNfcConfig::file_exist(const char* filename) {
 CNfcConfig& CNfcConfig::GetInstance() {
   static CNfcConfig theInstance;
   char config_name_generic[MAX_DATA_CONFIG_PATH_LEN] = {'\0'};
+  static int reg_init = 0;
+
+  while(reg_init == 0) {
+    if(registerNfcDynamicProtection() == 0) {
+      reg_init = 1;
+    } else {
+      ALOGD("NfcDynamicProtection register success and get peripheral status failed; Retry");
+      usleep(100000);
+    }
+  }
+
+  if(checkNfcSecureStatus()) {
+    theInstance.size() == 0;
+    return theInstance;
+  }
 
   if (theInstance.size() == 0 && theInstance.mValidFile) {
     string strPath;
