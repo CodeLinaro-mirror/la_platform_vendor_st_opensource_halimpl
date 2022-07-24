@@ -63,6 +63,7 @@ name:
         "hal/hal_auth.cc",
         "hal/loader_st21nfcd_RA7.c",
         "hal/loader_st21nfcd_RA9.c",
+        "dynamic_protection/phNfcDynamicProtection.cc",
       ],
 
       local_include_dirs :
@@ -70,12 +71,14 @@ name:
         "gki/ulinux",
         "hal",
         "include",
+        "dynamic_protection",
       ],
 
       export_include_dirs :
       [
         "include",
         "gki/ulinux",
+        "dynamic_protection",
       ],
       shared_libs : [
         "libbase",
@@ -85,5 +88,9 @@ name:
         "libhidlbase",
         "liblog",
         "libutils",
+      ],
+      header_libs: [
+        "peripheralstate_headers",
+        "mink_headers",
       ],
 }
