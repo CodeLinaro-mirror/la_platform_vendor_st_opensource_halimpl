@@ -24,6 +24,6 @@ typedef struct {
   nfc_stack_data_callback_t* p_data_cback;
   HALHANDLE hHAL;
   nfc_stack_callback_t* p_cback_unwrap;
-} st21nfc_dev_t; 
+} st21nfc_dev_t;
 
 #endif

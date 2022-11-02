@@ -64,8 +64,9 @@
 
 static int fidI2c = 0;
 static int cmdPipe[2] = {0, 0};
-static int is4bytesheader = 1;
+static int is4bytesheader = 0;
 static bool recovery_mode = false;
+static bool resetPulseDone = false;
 
 static struct pollfd event_table[2];
 static pthread_t threadHandle = (pthread_t)NULL;
@@ -116,7 +117,12 @@ static void* I2cWorkerThread(void* arg) {
     int poll_status = poll(event_table, 2, -1);
 
     if (-1 == poll_status) {
-      STLOG_HAL_E("error in poll call\n");
+      poll_status = errno;
+      STLOG_HAL_E("error in poll call : %d - %s\n", poll_status,
+                  strerror(poll_status));
+      if ((poll_status == EINTR) || (poll_status == EAGAIN)) continue;
+
+      // other errors, we stop.
       break;
     }
 
@@ -138,10 +144,16 @@ static void* I2cWorkerThread(void* arg) {
           int bytesRead = i2cRead(fidI2c, buffer, hdrsz);
 
           if (bytesRead == hdrsz) {
-            if ((hdrsz == 4) && (buffer[0] == 0x60) && (buffer[1] == 0x00)) {
-              is4bytesheader = 0;  // read only 3 bytes until next reset. We are
-                                   // either in loader mode or in older firmware
+            if ((hdrsz == 3) && (buffer[0] == 0x7E) && resetPulseDone) {
+              is4bytesheader = 1;  // read 4 bytes until next reset
+              bytesRead = i2cRead(fidI2c, buffer + 3,
+                                  1);  // read the third byte of header
+              if (bytesRead != 1) {
+                STLOG_HAL_E("Failed to read last byte\n");
+              }
+              hdrsz = 4;
             }
+
             if ((hdrsz == 4) && (buffer[0] != 0x7E)) {
               extra = 1;  // we read 1 payload byte already
             } else if (hdrsz == 4) {
@@ -196,6 +208,7 @@ static void* I2cWorkerThread(void* arg) {
             }
 
             if (readOk == true) {
+              resetPulseDone = false;
               int remaining = buffer[2];
               bytesRead = 0;
 
@@ -283,6 +296,9 @@ static void* I2cWorkerThread(void* arg) {
   close(fidI2c);
   close(cmdPipe[0]);
   close(cmdPipe[1]);
+
+  // Stop here if we got a serious error above.
+  assert(closeThread);
 
   HalDestroy(hHAL);
   STLOG_HAL_D("thread exit\n");
@@ -438,8 +454,9 @@ static int i2cResetPulse(int fid) {
   }
   STLOG_HAL_D("! i2cResetPulse!!, result = %d", result);
   usleep(3000);  // wait for the CLF to boot before enable read
+  resetPulseDone = true;
   (void)pthread_mutex_unlock(&i2cguard_mtx);
-  is4bytesheader = 1;  // reset the flag
+  is4bytesheader = 0;  // reset the flag
   return result;
 } /* i2cResetPulse*/
 
