@@ -16,6 +16,13 @@
  *
  *
  ----------------------------------------------------------------------*/
+/******************************************************************************
+ *
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ *
+ ******************************************************************************/
 
 #include <assert.h>
 #include <errno.h>
@@ -44,8 +51,6 @@
 #define ST21NFC_SET_POLARITY_FALLING _IOR(ST21NFC_MAGIC, 0x04, unsigned int)
 #define ST21NFC_SET_POLARITY_HIGH _IOR(ST21NFC_MAGIC, 0x05, unsigned int)
 #define ST21NFC_SET_POLARITY_LOW _IOR(ST21NFC_MAGIC, 0x06, unsigned int)
-
-#define ST21NFC_CLK_DISABLE_UNPREPARE _IO(ST21NFC_MAGIC, 0x0A)
 
 /*
 #define ST21NFC_GET_WAKEUP _IO(ST21NFC_MAGIC, 0x01)
@@ -258,9 +263,6 @@ static void* I2cWorkerThread(void* arg) {
       switch (cmd) {
         case 'X':
           STLOG_HAL_D("received close command\n");
-          if (-1 == ioctl(fidI2c, ST21NFC_CLK_DISABLE_UNPREPARE, NULL)) {
-            STLOG_HAL_E("ioctl(ST21NFC_CLK_DISABLE_UNPREPARE) failed\n");
-          }
           closeThread = true;
           break;
 
