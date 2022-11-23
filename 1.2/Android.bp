@@ -20,7 +20,6 @@ name:
                                                     owner: "st",
                                                                   init_rc :
       ["android.hardware.nfc@1.2-service-st.rc"],
-      vintf_fragments: ["android.hardware.nfc@1.2-service-st.xml"],
       relative_install_path : "hw",
                               srcs :
       [ "StNfcService.cpp", "Nfc.cpp", "hal_st21nfc.cc" ],
