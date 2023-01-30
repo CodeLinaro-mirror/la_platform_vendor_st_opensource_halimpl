@@ -16,6 +16,15 @@
  *
  *
  ******************************************************************************/
+
+ /******************************************************************************
+ *
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ *
+ ******************************************************************************/
+
 #define LOG_TAG "NfcNciHalWrapper"
 #include <assert.h>
 #include <cutils/properties.h>
@@ -28,6 +37,7 @@
 #include "hal_auth.h"
 #include "halcore.h"
 #include "st21nfc_dev.h"
+#include "phNfcDynamicProtection.h"
 
 extern void HalCoreCallback(void* context, uint32_t event, const void* d,
                             size_t length);
@@ -37,7 +47,7 @@ extern void I2cRecovery();
 extern int i2cNfccMayUseEse(int use);
 
 static void halWrapperDataCallback(uint16_t data_len, uint8_t* p_data);
-static void halWrapperCallback(uint8_t event, uint8_t event_status);
+void halWrapperCallback(uint8_t event, uint8_t event_status);
 
 nfc_stack_callback_t* mHalWrapperCallback = NULL;
 nfc_stack_data_callback_t* mHalWrapperDataCallback = NULL;
@@ -77,6 +87,9 @@ bool mFwLogsUnblocked = false;
 bool isTimeout = false;
 int recoveryCount = 0;
 int const recoveryMax = 3;
+
+/* NFC HAL status */
+extern phHalStatus_t hal_status;
 
 void wait_ready() {
   pthread_mutex_lock(&mutex);
@@ -149,6 +162,8 @@ bool hal_wrapper_open(st21nfc_dev_t* dev, nfc_stack_callback_t* p_cback,
   STLOG_HAL_V("%s Start Timer", __func__);
   HalSendDownstreamTimer(mHalHandle, 10000);
 
+  hal_status = HAL_STATUS_OPEN;
+
   return 1;
 }
 
@@ -203,6 +218,8 @@ int hal_wrapper_close(int call_cb, int nfc_mode) {
 
   I2cCloseLayer();
   if (call_cb) mHalWrapperCallback(HAL_NFC_CLOSE_CPLT_EVT, HAL_NFC_STATUS_OK);
+
+  hal_status = HAL_STATUS_CLOSE;
 
   return 1;
 }
@@ -1074,7 +1091,7 @@ void halWrapperDataCallback(uint16_t data_len, uint8_t* p_data) {
   }
 }
 
-static void halWrapperCallback(uint8_t event,
+void halWrapperCallback(uint8_t event,
                                __attribute__((unused)) uint8_t event_status) {
   uint8_t coreInitCmd[] = {0x20, 0x01, 0x02, 0x00, 0x00};
 
