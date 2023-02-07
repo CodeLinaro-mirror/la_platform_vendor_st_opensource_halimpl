@@ -3,7 +3,7 @@ ifeq ($(call is-board-platform-in-list, pineapple),true)
 TARGET_USES_STM_NFC := true
 endif
 
-STM_VENDOR_NFC := android.hardware.nfc@1.2-service-st
+STM_VENDOR_NFC := android.hardware.nfc-service-st
 STM_VENDOR_NFC += nfc_nci.st21nfc.st
 
 ifeq ($(strip $(TARGET_USES_STM_NFC)),true)

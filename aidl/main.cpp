@@ -23,6 +23,10 @@ using ::aidl::android::hardware::nfc::Nfc;
 
 int main() {
   LOG(INFO) << "NFC HAL starting up";
+  // Not registering the HAL service when device node is not present
+  if (access("/dev/st21nfc",F_OK)!=0)
+    ABinderProcess_joinThreadPool();
+
   if (!ABinderProcess_setThreadPoolMaxThreadCount(1)) {
     LOG(INFO) << "failed to set thread pool max thread count";
     return 1;

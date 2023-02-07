@@ -2,7 +2,6 @@ cc_binary {
     name: "android.hardware.nfc-service-st",
     relative_install_path: "hw",
     init_rc: ["nfc-service-st.rc"],
-    vintf_fragments: ["nfc-service-st.xml"],
     vendor: true,
     cflags: [
         "-Wall",
