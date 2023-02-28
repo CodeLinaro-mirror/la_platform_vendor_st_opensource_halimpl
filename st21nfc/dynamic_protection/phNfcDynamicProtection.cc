@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+* Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
 * modification, are permitted (subject to the limitations in the
@@ -31,14 +31,17 @@
 * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-
+#define LOG_TAG "PeripheralDynamicProtection"
 #include "phNfcDynamicProtection.h"
+#include <hardware/nfc.h>
 #include "CPeripheralAccessControl.h"
 #include "peripheralStateUtils.h"
 
 typedef int32_t (*getNfcPhStatusFnPtr)(void *context);
 typedef void* (*registerNfcPhCBFnPtr)(uint32_t peripheral, PeripheralStateCB NotifyEvent);
 typedef int32_t (*deregisterNfcPhCBFnPtr)(void *context);
+
+extern void halWrapperCallback(uint8_t event, uint8_t event_status);
 
 void* mSecureLibInstance = NULL;
 getNfcPhStatusFnPtr mGetPhState = NULL;
@@ -50,6 +53,7 @@ uint32_t pType = CPeripheralAccessControl_NFC_UID;
 static int phSecureState = 1;
 static int sync_enable;
 
+volatile phHalStatus_t hal_status;
 sem_t secure_call_flow_sync_sem;
 
 /*******************************************************************************
@@ -148,16 +152,28 @@ int32_t notifyNfcPeripheralEvent(const uint32_t Nfcperi, const uint8_t NfcSecure
   switch(curState)
   {
   case STATE_SECURE:
-  /**
-  * Peripheral Entering Secure mode
-  */
+    /**
+    * Peripheral Entering Secure mode
+    */
     if(phSecureState == 0) {
-      phSecureState = 1;
+      if(hal_status == HAL_STATUS_OPEN) {
+        /*Ideal conditions this should never be called, called only when TZ notifies before disabling the  NFC to avoid NFC crash */
+        ALOGD("Received Secure Zone entry notifications from TZ during NFC active state; disable NFC\n");
+        halWrapperCallback(HAL_TZ_SECURE_ZONE_DISABLE_NFC_EVT, HAL_NFC_STATUS_OK);
+        /*wait until NFC is closed*/
+        do{
+          if(hal_status == HAL_STATUS_CLOSE){
+            ALOGD("TZ NFC Disable Successful");
+              break;
+          }
+        }while(1);
+      }
       result = notifyNfcDriver(phSecureState);
       if(result == -1) {
         ALOGE("driver notify call failed during secure entry\n");
         return result;
       }
+      phSecureState = 1;
     }
     ALOGD("Entry Secure zone successful\n");
     break;
