@@ -47,8 +47,15 @@
 #define NFC_DEV_NODE_NAME "/dev/st21nfc"
 #define HAL_NFC_STATUS_SECURE_ZONE 0xA
 #define NFC_SECURE_ZONE _IO(0xEA , 0x0B)
+/*NFC HAL secure zone event*/
+#define HAL_TZ_SECURE_ZONE_DISABLE_NFC_EVT 0xC1
 
 typedef int32_t (*PeripheralStateCB)(const uint32_t peripheral, const uint8_t state);
+
+typedef enum {
+  HAL_STATUS_CLOSE = 0,
+  HAL_STATUS_OPEN
+}phHalStatus_t;
 
 int8_t registerNfcDynamicProtection();
 uint8_t checkNfcSecureStatus();
