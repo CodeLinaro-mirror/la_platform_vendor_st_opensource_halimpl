@@ -21,3 +21,7 @@ PRODUCT_COPY_FILES += \
 PRODUCT_PACKAGES += $(STM_VENDOR_NFC)
 endif
 
+ifeq ($(call is-board-platform-in-list, crow),true)
+PRODUCT_COPY_FILES += \
+    vendor/st/opensource/halimpl/conf/libnfc-hal-st-608_mtp.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-hal-st-608_mtp.conf
+endif
