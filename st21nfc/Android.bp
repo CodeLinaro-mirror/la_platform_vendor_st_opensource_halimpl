@@ -40,17 +40,16 @@ cc_library_shared{
 }
 
 cc_library_static {
-name:
-  "nfc_nci.st21nfc.st.static", defaults : ["hidl_defaults"],
-                                               vendor : true,
-                                               owner: "st",
+  name : "nfc_nci.st21nfc.st.static",
+  defaults : ["hidl_defaults"],
+  vendor : true,
+  owner: "st",
 
-                                                             cflags :
-      [
-        "-Wall",
-        "-Werror",
-        "-Wextra",
-      ],
+  cflags : [
+    "-Wall",
+    "-Werror",
+    "-Wextra",
+  ],
 
       srcs :
       [
