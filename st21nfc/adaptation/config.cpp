@@ -51,6 +51,12 @@ bool mAscii;
 #define MAX_SOC_INFO_NAME_LEN (15)
 #define MAX_SUFFIX_NAME_LEN (30)
 
+typedef enum
+{
+  TARGET_SM_KAILUA                     = 519, /**< SM_KAILUA target */
+  TARGET_SMP_KAILUA                    = 536 /**< SMP_KAILUA target */
+}TARGETTYPE;
+
 using namespace ::std;
 
 void findConfigFile(const string& configName, string& filePath);
@@ -480,18 +486,20 @@ CNfcConfig& CNfcConfig::GetInstance() {
   char config_name_generic[MAX_DATA_CONFIG_PATH_LEN] = {'\0'};
   static int reg_init = 0;
 
-  while(reg_init == 0) {
-    if(registerNfcDynamicProtection() == 0) {
-      reg_init = 1;
-    } else {
-      ALOGD("NfcDynamicProtection register success and get peripheral status failed; Retry");
-      usleep(100000);
-    }
-  }
+  if (get_board_msm_id()) {
+    while(reg_init == 0) {
+      if(registerNfcDynamicProtection() == 0) {
+        reg_init = 1;
+      } else {
+        ALOGD("NfcDynamicProtection register success and get peripheral status failed; Retry");
+        usleep(100000);
+     }
+   }
 
-  if(checkNfcSecureStatus()) {
-    theInstance.size() == 0;
-    return theInstance;
+   if(checkNfcSecureStatus()) {
+     theInstance.size() == 0;
+     return theInstance;
+   }
   }
 
   if (theInstance.size() == 0 && theInstance.mValidFile) {
@@ -909,4 +917,22 @@ void readOptionalConfig(const char* extra) {
   }
 
   CNfcConfig::GetInstance().readConfig(strPath.c_str(), false);
+}
+
+bool get_board_msm_id(void)
+{
+   int rc = 0;
+   int msm_id = 0;
+   char soc_info[MAX_SOC_INFO_NAME_LEN] = {'\0'};
+
+   rc = get_soc_info(soc_info, SYSFS_SOCID_PATH1, SYSFS_SOCID_PATH2);
+   if (rc < 0) {
+      ALOGE("get_soc_info(SOC_ID) fail!\n");
+      return false;
+   }
+   msm_id = atoi(soc_info);
+   if ((msm_id == TARGET_SM_KAILUA) || (msm_id == TARGET_SMP_KAILUA))
+      return true;
+   else
+      return false;
 }
