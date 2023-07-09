@@ -20,6 +20,13 @@
  *
  *
  ******************************************************************************/
+/*
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ *
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
+
 #include <log/log.h>
 #include <stdio.h>
 #include <sys/stat.h>
@@ -50,6 +57,12 @@ bool mAscii;
 
 #define MAX_SOC_INFO_NAME_LEN (15)
 #define MAX_SUFFIX_NAME_LEN (30)
+
+typedef enum
+{
+  TARGET_SM_LANAI                      = 557, /**< SM_LANAI target */
+  TARGET_SMP_LANAI                     = 577, /**< SMP_LANAI target */
+}TARGETTYPE;
 
 using namespace ::std;
 
@@ -480,18 +493,20 @@ CNfcConfig& CNfcConfig::GetInstance() {
   char config_name_generic[MAX_DATA_CONFIG_PATH_LEN] = {'\0'};
   static int reg_init = 0;
 
-  while(reg_init == 0) {
-    if(registerNfcDynamicProtection() == 0) {
-      reg_init = 1;
-    } else {
-      ALOGD("NfcDynamicProtection register success and get peripheral status failed; Retry");
-      usleep(100000);
-    }
-  }
+  if (get_board_msm_id()) {
+    while(reg_init == 0) {
+      if(registerNfcDynamicProtection() == 0) {
+        reg_init = 1;
+      } else {
+        ALOGD("NfcDynamicProtection register success and get peripheral status failed; Retry");
+        usleep(100000);
+      }
+   }
 
-  if(checkNfcSecureStatus()) {
-    theInstance.size() == 0;
-    return theInstance;
+   if(checkNfcSecureStatus()) {
+     theInstance.size() == 0;
+     return theInstance;
+   }
   }
 
   if (theInstance.size() == 0 && theInstance.mValidFile) {
@@ -912,4 +927,22 @@ void readOptionalConfig(const char* extra) {
   }
 
   CNfcConfig::GetInstance().readConfig(strPath.c_str(), false);
+}
+
+bool get_board_msm_id(void)
+{
+   int rc = 0;
+   int msm_id = 0;
+   char soc_info[MAX_SOC_INFO_NAME_LEN] = {'\0'};
+
+   rc = get_soc_info(soc_info, SYSFS_SOCID_PATH1, SYSFS_SOCID_PATH2);
+   if (rc < 0) {
+      ALOGE("get_soc_info(SOC_ID) fail!\n");
+      return false;
+   }
+   msm_id = atoi(soc_info);
+   if ((msm_id == TARGET_SM_LANAI) || (msm_id == TARGET_SMP_LANAI))
+      return true;
+   else
+      return false;
 }
