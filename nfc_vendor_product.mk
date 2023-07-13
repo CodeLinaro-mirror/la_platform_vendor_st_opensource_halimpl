@@ -23,5 +23,5 @@ endif
 
 ifeq ($(call is-board-platform-in-list, crow),true)
 PRODUCT_COPY_FILES += \
-    vendor/st/opensource/halimpl/conf/libnfc-hal-st-608_mtp.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-hal-st-608_mtp.conf
+    vendor/st/opensource/halimpl/conf/libnfc-hal-st-608_idp.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-hal-st-608_idp.conf
 endif
