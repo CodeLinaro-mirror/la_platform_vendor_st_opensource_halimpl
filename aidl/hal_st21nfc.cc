@@ -31,6 +31,8 @@
 #include "halcore.h"
 #include "st21nfc_dev.h"
 
+#include "phNfcDynamicProtection.h"
+
 #define VENDOR_LIB_PATH "/vendor/lib64/"
 #define VENDOR_LIB_EXT ".so"
 
@@ -275,6 +277,11 @@ static void async_callback_post(nfc_event_t event, nfc_status_t event_status) {
 int StNfc_hal_open(nfc_stack_callback_t* p_cback,
                    nfc_stack_data_callback_t* p_data_cback) {
   bool result = false;
+  if((checkNfcSecureStatus() == 1)) {
+    (*p_cback)(HAL_NFC_OPEN_CPLT_EVT, HAL_NFC_STATUS_FAILED);
+    (void)pthread_mutex_unlock(&hal_mtx);
+    return -1;
+   }
 
   STLOG_HAL_D("HAL st21nfc: %s %s", __func__, halVersion);
 
