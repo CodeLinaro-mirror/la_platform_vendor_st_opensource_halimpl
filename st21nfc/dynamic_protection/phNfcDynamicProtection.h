@@ -61,3 +61,4 @@ int8_t registerNfcDynamicProtection();
 uint8_t checkNfcSecureStatus();
 int notifyNfcDriver(int opt);
 int register_routine(uint32_t pUID);
+bool get_board_msm_id(void);

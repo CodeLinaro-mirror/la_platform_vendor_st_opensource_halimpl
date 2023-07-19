@@ -19,6 +19,12 @@
  *NCI version)
  *
  ******************************************************************************/
+/*
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ *
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
 
 #include <android-base/properties.h>
 #include <dlfcn.h>
@@ -43,7 +49,7 @@ extern void i2cSetTimeBetweenCmds(int ms);
 
 typedef int (*STEseReset)(void);
 
-const char* halVersion = "ST21NFC HAL1.3C Version 140-20230525-23W21p0";
+const char* halVersion = "ST21NFC HAL1.3C Version 140-20230616-23W24p0";
 
 uint8_t cmd_set_nfc_mode_enable[] = {0x2f, 0x02, 0x02, 0x02, 0x01};
 uint8_t hal_is_closed = 1;
@@ -281,10 +287,12 @@ int StNfc_hal_open(nfc_stack_callback_t* p_cback,
                    nfc_stack_data_callback_t* p_data_cback) {
   bool result = false;
 
-  if((checkNfcSecureStatus() == 1)) {
-    (*p_cback)(HAL_NFC_OPEN_CPLT_EVT, HAL_NFC_STATUS_SECURE_ZONE);
-    (void)pthread_mutex_unlock(&hal_mtx);
-    return -1;
+  if (get_board_msm_id()) {
+    if((checkNfcSecureStatus() == 1)) {
+      (*p_cback)(HAL_NFC_OPEN_CPLT_EVT, HAL_NFC_STATUS_SECURE_ZONE);
+      (void)pthread_mutex_unlock(&hal_mtx);
+      return -1;
+    }
   }
 
   STLOG_HAL_D("HAL st21nfc: %s %s", __func__, halVersion);
@@ -537,7 +545,7 @@ void StNfc_hal_getConfig(android::hardware::nfc::V1_1::NfcConfig& config) {
   }
 
   if (GetNumValue(NAME_ISO_DEP_MAX_TRANSCEIVE, &num, sizeof(num))) {
-    config.maxIsoDepTransceiveLength = (int)num;
+    config.maxIsoDepTransceiveLength = (uint32_t)num;
   }
   if (GetNumValue(NAME_DEFAULT_OFFHOST_ROUTE, &num, sizeof(num))) {
     config.defaultOffHostRoute = num;
