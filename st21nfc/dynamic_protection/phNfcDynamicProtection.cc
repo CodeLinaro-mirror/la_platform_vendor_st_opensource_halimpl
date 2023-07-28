@@ -156,10 +156,11 @@ int32_t notifyNfcPeripheralEvent(const uint32_t Nfcperi, const uint8_t NfcSecure
     * Peripheral Entering Secure mode
     */
     if(phSecureState == 0) {
+      phSecureState = 1;
       if(hal_status == HAL_STATUS_OPEN) {
         /*Ideal conditions this should never be called, called only when TZ notifies before disabling the  NFC to avoid NFC crash */
         ALOGD("Received Secure Zone entry notifications from TZ during NFC active state; disable NFC\n");
-        halWrapperCallback(HAL_TZ_SECURE_ZONE_DISABLE_NFC_EVT, HAL_NFC_STATUS_OK);
+        halWrapperCallback(HAL_NFC_ERROR_EVT, HAL_NFC_STATUS_FAILED);
         /*wait until NFC is closed*/
         do{
           if(hal_status == HAL_STATUS_CLOSE){
@@ -173,7 +174,6 @@ int32_t notifyNfcPeripheralEvent(const uint32_t Nfcperi, const uint8_t NfcSecure
         ALOGE("driver notify call failed during secure entry\n");
         return result;
       }
-      phSecureState = 1;
     }
     ALOGD("Entry Secure zone successful\n");
     break;
