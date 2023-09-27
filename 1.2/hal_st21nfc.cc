@@ -43,7 +43,7 @@ extern void HalCoreCallback(void* context, uint32_t event, const void* d,
 extern bool I2cOpenLayer(void* dev, HAL_CALLBACK callb, HALHANDLE* pHandle);
 extern void i2cSetTimeBetweenCmds(int ms);
 
-const char* halVersion = "ST21NFC HAL1.2C Version 130-20220408-22W12p2";
+const char* halVersion = "ST21NFC HAL1.3C Version 130-20220929-22W39p0";
 
 uint8_t cmd_set_nfc_mode_enable[] = {0x2f, 0x02, 0x02, 0x02, 0x01};
 uint8_t hal_is_closed = 1;
