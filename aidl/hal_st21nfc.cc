@@ -16,8 +16,11 @@
  *  limitations under the License.
  *
  *  Modified by ST Microelectronics S.A. (adaptation of nfc_nci.c for ST21NFC
- *NCI version)
- *
+ *  NCI version)
+ *  
+ *  Changes from Qualcomm Innovation Center are provided under the following license:
+ *  Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ *  SPDX-License-Identifier: BSD-3-Clause-Clear
  ******************************************************************************/
 
 #include <android-base/properties.h>
@@ -30,9 +33,9 @@
 #include "hal_config.h"
 #include "halcore.h"
 #include "st21nfc_dev.h"
-
+#ifdef NFC_SECURE_PERIPHERAL_ENABLED
 #include "phNfcDynamicProtection.h"
-
+#endif
 #define VENDOR_LIB_PATH "/vendor/lib64/"
 #define VENDOR_LIB_EXT ".so"
 
@@ -277,12 +280,13 @@ static void async_callback_post(nfc_event_t event, nfc_status_t event_status) {
 int StNfc_hal_open(nfc_stack_callback_t* p_cback,
                    nfc_stack_data_callback_t* p_data_cback) {
   bool result = false;
+#ifdef NFC_SECURE_PERIPHERAL_ENABLED
   if((checkNfcSecureStatus() == 1)) {
     (*p_cback)(HAL_NFC_OPEN_CPLT_EVT, HAL_NFC_STATUS_FAILED);
     (void)pthread_mutex_unlock(&hal_mtx);
     return -1;
    }
-
+#endif
   STLOG_HAL_D("HAL st21nfc: %s %s", __func__, halVersion);
 
   client_is_nci_10 = false;

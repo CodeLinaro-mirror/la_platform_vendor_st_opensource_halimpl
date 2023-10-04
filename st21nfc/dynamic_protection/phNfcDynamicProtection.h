@@ -32,6 +32,7 @@
 * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#ifdef NFC_SECURE_PERIPHERAL_ENABLED
 #include <linux/ioctl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -60,3 +61,4 @@ uint8_t checkNfcSecureStatus();
 int notifyNfcDriver(int opt);
 int register_routine(uint32_t pUID);
 bool get_board_msm_id(void);
+#endif

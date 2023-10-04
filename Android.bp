@@ -29,29 +29,46 @@ license {
     ],
 }
 
-cc_library_static {
-name:
-  "nfc_nci.st21nfc.static", defaults : ["hidl_defaults"],
-                                       vendor : true,
-                                       owner: "st",
+soong_config_module_type_import {
+    from: "vendor/st/opensource/halimpl/SoongConfig.bp",
+    module_types: ["nfc_cc_defaults"],
+}
 
-                                                     cflags :
-      [
+nfc_cc_defaults {
+    name: "nfc-st-defaults-instance",
+    soong_config_variables: {
+        board_secure_peripheral_framework: {
+            pineapple: {
+                cflags: ["-DNFC_SECURE_PERIPHERAL_ENABLED"],
+            },
+            conditions_default: {},
+        },
+    },
+}
+
+cc_library_static {
+    name: "nfc_nci.st21nfc.static",
+    defaults : [
+       "hidl_defaults",
+       "nfc-st-defaults-instance",
+       ],
+    vendor : true,
+    owner: "st",
+    cflags : [
         "-DST21NFC",
         "-DST21NFC_DTA",
         "-Wall",
         "-Werror",
         "-Wextra",
-      ],
+        ],
 
-      srcs : ["1.2/hal_st21nfc.cc"],
+     srcs : ["1.2/hal_st21nfc.cc"],
 
-             whole_static_libs :
-      [
+     whole_static_libs :[
         "nfc_nci.st21nfc.st.static",
-      ],
+        ],
 
-      shared_libs : [
+     shared_libs : [
         "libbase",
         "libcutils",
         "libhardware",
@@ -61,5 +78,5 @@ name:
         "android.hardware.nfc@1.1",
         "android.hardware.nfc@1.2",
         "libhidlbase",
-      ],
+        ],
 }

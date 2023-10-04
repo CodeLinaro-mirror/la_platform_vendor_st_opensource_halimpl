@@ -34,7 +34,9 @@
 #include <string>
 #include <vector>
 #include "android_logmsg.h"
+#ifdef NFC_SECURE_PERIPHERAL_ENABLED
 #include "phNfcDynamicProtection.h"
+#endif
 
 const char alternative_config_path[] = "";
 const char* transport_config_paths[] = {"/odm/etc/", "/vendor/etc/", "/etc/"};
@@ -491,24 +493,23 @@ int CNfcConfig::file_exist(const char* filename) {
 CNfcConfig& CNfcConfig::GetInstance() {
   static CNfcConfig theInstance;
   char config_name_generic[MAX_DATA_CONFIG_PATH_LEN] = {'\0'};
+#ifdef NFC_SECURE_PERIPHERAL_ENABLED
   static int reg_init = 0;
 
-  if (get_board_msm_id()) {
-    while(reg_init == 0) {
-      if(registerNfcDynamicProtection() == 0) {
-        reg_init = 1;
-      } else {
-        ALOGD("NfcDynamicProtection register success and get peripheral status failed; Retry");
-        usleep(100000);
-      }
-   }
-
-   if(checkNfcSecureStatus()) {
-     theInstance.size() == 0;
-     return theInstance;
-   }
+  while(reg_init == 0) {
+    if(registerNfcDynamicProtection() == 0) {
+      reg_init = 1;
+    } else {
+      ALOGD("NfcDynamicProtection register success and get peripheral status failed; Retry");
+      usleep(100000);
+    }
   }
 
+  if(checkNfcSecureStatus()) {
+    theInstance.size() == 0;
+    return theInstance;
+  }
+#endif
   if (theInstance.size() == 0 && theInstance.mValidFile) {
     string strPath;
     if (alternative_config_path[0] != '\0') {
@@ -927,22 +928,4 @@ void readOptionalConfig(const char* extra) {
   }
 
   CNfcConfig::GetInstance().readConfig(strPath.c_str(), false);
-}
-
-bool get_board_msm_id(void)
-{
-   int rc = 0;
-   int msm_id = 0;
-   char soc_info[MAX_SOC_INFO_NAME_LEN] = {'\0'};
-
-   rc = get_soc_info(soc_info, SYSFS_SOCID_PATH1, SYSFS_SOCID_PATH2);
-   if (rc < 0) {
-      ALOGE("get_soc_info(SOC_ID) fail!\n");
-      return false;
-   }
-   msm_id = atoi(soc_info);
-   if ((msm_id == TARGET_SM_LANAI) || (msm_id == TARGET_SMP_LANAI))
-      return true;
-   else
-      return false;
 }

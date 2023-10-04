@@ -37,7 +37,9 @@
 #include "hal_auth.h"
 #include "halcore.h"
 #include "st21nfc_dev.h"
+#ifdef NFC_SECURE_PERIPHERAL_ENABLED
 #include "phNfcDynamicProtection.h"
+#endif
 
 extern void HalCoreCallback(void* context, uint32_t event, const void* d,
                             size_t length);
@@ -91,9 +93,10 @@ bool mFwLogsUnblocked = false;
 bool isTimeout = false;
 int recoveryCount = 0;
 int const recoveryMax = 3;
-
+#ifdef NFC_SECURE_PERIPHERAL_ENABLED
 /* NFC HAL status */
 extern phHalStatus_t hal_status;
+#endif
 
 void wait_ready() {
   pthread_mutex_lock(&mutex);
@@ -165,8 +168,9 @@ bool hal_wrapper_open(st21nfc_dev_t* dev, nfc_stack_callback_t* p_cback,
 
   STLOG_HAL_V("%s Start Timer", __func__);
   HalSendDownstreamTimer(mHalHandle, 10000);
-
+#ifdef NFC_SECURE_PERIPHERAL_ENABLED
   hal_status = HAL_STATUS_OPEN;
+#endif
 
   return 1;
 }
@@ -222,9 +226,9 @@ int hal_wrapper_close(int call_cb, int nfc_mode) {
 
   I2cCloseLayer();
   if (call_cb) mHalWrapperCallback(HAL_NFC_CLOSE_CPLT_EVT, HAL_NFC_STATUS_OK);
-
+#ifdef NFC_SECURE_PERIPHERAL_ENABLED
   hal_status = HAL_STATUS_CLOSE;
-
+#endif
   return 1;
 }
 

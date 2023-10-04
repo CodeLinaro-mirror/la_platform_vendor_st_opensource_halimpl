@@ -7,10 +7,28 @@ package {
     default_applicable_licenses: ["vendor_st_nfc_hardware_st_nfc_license"],
 }
 
+soong_config_module_type_import {
+    from: "vendor/st/opensource/halimpl/SoongConfig.bp",
+    module_types: ["nfc_cc_defaults"],
+}
+
+nfc_cc_defaults {
+    name: "nfc-st-aild-defaults-instance",
+    soong_config_variables: {
+        board_secure_peripheral_framework: {
+            pineapple: {
+                cflags: ["-DNFC_SECURE_PERIPHERAL_ENABLED"],
+            },
+            conditions_default: {},
+        },
+    },
+}
+
 cc_binary {
     name: "android.hardware.nfc-service-st",
     relative_install_path: "hw",
     init_rc: ["nfc-service-st.rc"],
+    defaults: ["nfc-st-aild-defaults-instance"],
     vendor: true,
     cflags: [
         "-Wall",

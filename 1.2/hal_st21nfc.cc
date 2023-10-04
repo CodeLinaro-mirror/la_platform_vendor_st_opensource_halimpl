@@ -37,8 +37,9 @@
 #include "hal_config.h"
 #include "halcore.h"
 #include "st21nfc_dev.h"
-
+#ifdef NFC_SECURE_PERIPHERAL_ENABLED
 #include "phNfcDynamicProtection.h"
+#endif
 #define VENDOR_LIB_PATH "/vendor/lib64/"
 #define VENDOR_LIB_EXT ".so"
 
@@ -287,13 +288,13 @@ int StNfc_hal_open(nfc_stack_callback_t* p_cback,
                    nfc_stack_data_callback_t* p_data_cback) {
   bool result = false;
 
-  if (get_board_msm_id()) {
-    if((checkNfcSecureStatus() == 1)) {
-      (*p_cback)(HAL_NFC_OPEN_CPLT_EVT, HAL_NFC_STATUS_SECURE_ZONE);
-      (void)pthread_mutex_unlock(&hal_mtx);
-      return -1;
-    }
+#ifdef NFC_SECURE_PERIPHERAL_ENABLED
+  if((checkNfcSecureStatus() == 1)) {
+    (*p_cback)(HAL_NFC_OPEN_CPLT_EVT, HAL_NFC_STATUS_SECURE_ZONE);
+    (void)pthread_mutex_unlock(&hal_mtx);
+    return -1;
   }
+#endif
 
   STLOG_HAL_D("HAL st21nfc: %s %s", __func__, halVersion);
 
