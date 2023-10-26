@@ -74,6 +74,9 @@ extern void hal_wrapper_unblockFwLogs();
 extern int hal_wrapper_send_config(int skip);
 extern void hal_wrapper_factoryReset();
 
+/*check HAL secure status*/
+extern bool checkNfcSecureStatus_HAL();
+
 /* Make sure to always post nfc_stack_callback_t in a separate thread.
 This prevents a possible deadlock in upper layer on some sequences.
 We need to synchronize finely for the callback called for hal close,
@@ -280,13 +283,11 @@ static void async_callback_post(nfc_event_t event, nfc_status_t event_status) {
 int StNfc_hal_open(nfc_stack_callback_t* p_cback,
                    nfc_stack_data_callback_t* p_data_cback) {
   bool result = false;
-#ifdef NFC_SECURE_PERIPHERAL_ENABLED
-  if((checkNfcSecureStatus() == 1)) {
-    (*p_cback)(HAL_NFC_OPEN_CPLT_EVT, HAL_NFC_STATUS_FAILED);
-    (void)pthread_mutex_unlock(&hal_mtx);
-    return -1;
-   }
-#endif
+
+  if(checkNfcSecureStatus_HAL()){
+	  (*p_cback)(HAL_NFC_OPEN_CPLT_EVT, HAL_NFC_STATUS_FAILED);
+	  return -1;
+  }
   STLOG_HAL_D("HAL st21nfc: %s %s", __func__, halVersion);
 
   client_is_nci_10 = false;

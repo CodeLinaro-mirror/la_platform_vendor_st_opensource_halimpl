@@ -132,6 +132,16 @@ void hal_wrapper_unblockFwLogs() {
   mFwLogsUnblocked = true;
 }
 
+bool checkNfcSecureStatus_HAL()
+{
+#ifdef NFC_SECURE_PERIPHERAL_ENABLED
+	return checkNfcSecureStatus();
+#else
+	return 0;
+#endif
+}
+
+
 bool hal_wrapper_open(st21nfc_dev_t* dev, nfc_stack_callback_t* p_cback,
                       nfc_stack_data_callback_t* p_data_cback,
                       HALHANDLE* pHandle) {

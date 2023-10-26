@@ -29,23 +29,6 @@ license {
     ],
 }
 
-soong_config_module_type_import {
-    from: "vendor/st/opensource/halimpl/SoongConfig.bp",
-    module_types: ["nfc_cc_defaults"],
-}
-
-nfc_cc_defaults {
-    name: "nfc-st-defaults-instance",
-    soong_config_variables: {
-        board_secure_peripheral_framework: {
-            pineapple: {
-                cflags: ["-DNFC_SECURE_PERIPHERAL_ENABLED"],
-            },
-            conditions_default: {},
-        },
-    },
-}
-
 cc_library_static {
     name: "nfc_nci.st21nfc.static",
     defaults : [
