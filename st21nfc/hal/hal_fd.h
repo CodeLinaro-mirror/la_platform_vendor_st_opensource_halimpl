@@ -39,6 +39,7 @@ typedef struct FWInfo {
   const char* fileHwType;
   uint32_t fileFwVersion;
   uint16_t fileCustVersion;  // if 0, no custom params available.
+  uint8_t chipProdType;
 } FWInfo;
 
 typedef enum {
@@ -49,6 +50,16 @@ typedef enum {
   HAL_FD_STATE_SEND_RAW_APDU,
   HAL_FD_STATE_EXIT_APDU,
 } hal_fd_state_e;
+
+typedef enum {
+  HAL_FD_ST54L_STATE_PUY_KEYUSER,
+  HAL_FD_ST54L_STATE_ERASE_UPGRADE_START,
+  HAL_FD_ST54L_STATE_ERASE_NFC_AREA,
+  HAL_FD_ST54L_STATE_ERASE_UPGRADE_STOP,
+  HAL_FD_ST54L_STATE_SEND_RAW_APDU,
+  HAL_FD_ST54L_STATE_SET_CONFIG,
+  HAL_FD_ST54L_STATE_SWITCH_TO_USER,
+} hal_fd_st54l_state_e;
 
 #define FT_CLF_MODE_ERROR 0
 #define FT_CLF_MODE_LOADER 1
@@ -71,6 +82,7 @@ typedef enum {
 // HwVersion :
 #define HW_NFCD 0x04
 #define HW_ST54J 0x05
+#define HW_ST54L 0x06
 
 extern const int nfc_patch_cmd_nb;
 extern const char ApduAuthentRecov[24];
@@ -83,7 +95,7 @@ void hal_fd_close();
 uint8_t ft_cmd_HwReset(uint8_t* pdata, uint8_t* clf_mode, bool force);
 void ExitHibernateHandler(HALHANDLE mHalHandle, uint16_t data_len,
                           uint8_t* p_data);
-void UpdateHandler(HALHANDLE mHalHandle, uint16_t data_len, uint8_t* p_data);
+void FwUpdateHandler(HALHANDLE mHalHandle, uint16_t data_len, uint8_t* p_data);
 void LdUpdateHandler(HALHANDLE mHalHandle, uint16_t data_len, uint8_t* p_data);
 void ApplyCustomParamHandler(HALHANDLE mHalHandle, uint16_t data_len,
                              uint8_t* p_data);
