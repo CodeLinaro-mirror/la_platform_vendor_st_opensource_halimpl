@@ -60,12 +60,6 @@ bool mAscii;
 #define MAX_SOC_INFO_NAME_LEN (15)
 #define MAX_SUFFIX_NAME_LEN (30)
 
-typedef enum
-{
-  TARGET_SM_LANAI                      = 557, /**< SM_LANAI target */
-  TARGET_SMP_LANAI                     = 577, /**< SMP_LANAI target */
-}TARGETTYPE;
-
 using namespace ::std;
 
 void findConfigFile(const string& configName, string& filePath);
