@@ -1,5 +1,5 @@
 # Enable build support for NFC open source vendor modules
-ifeq ($(call is-board-platform-in-list, pineapple),true)
+ifeq ($(call is-board-platform-in-list, sun),true)
 TARGET_USES_STM_NFC := true
 endif
 
@@ -16,7 +16,8 @@ PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.hardware.nfc.ese.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.nfc.ese.xml \
     frameworks/native/data/etc/android.hardware.nfc.uicc.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.nfc.uicc.xml \
     vendor/st/opensource/halimpl/conf/libnfc-hal-st.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-hal-st.conf \
-    vendor/st/opensource/halimpl/conf/libnfc-hal-st-557_mtp.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-hal-st-557_mtp.conf
+    vendor/st/opensource/halimpl/conf/libnfc-hal-st-618_mtp.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-hal-st-618_mtp.conf \
+    vendor/st/opensource/halimpl/conf/libnfc-hal-st-618_qrd.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-hal-st-618_qrd.conf
 
 PRODUCT_PACKAGES += $(STM_VENDOR_NFC)
 endif
