@@ -22,9 +22,9 @@ PRODUCT_COPY_FILES += \
 PRODUCT_PACKAGES += $(STM_VENDOR_NFC)
 endif
 
-ifeq ($(call is-board-platform-in-list, pineapple),true)
+ifeq ($(call is-board-platform-in-list, sun),true)
 TARGET_ENABLE_PERIPHERAL_CONTROL := true
 ifeq ($(TARGET_ENABLE_PERIPHERAL_CONTROL), true)
-    $(call soong_config_set,nfc,board_secure_peripheral_framework,pineapple)
+    $(call soong_config_set,nfc,board_secure_peripheral_framework,sun)
 endif
 endif
