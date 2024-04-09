@@ -277,9 +277,7 @@ int StNfc_hal_open(nfc_stack_callback_t* p_cback,
   (void)pthread_mutex_lock(&hal_mtx);
 
   if (!hal_is_closed) {
-    // hal_wrapper_close(0, nfc_mode);
-    (void)pthread_mutex_unlock(&hal_mtx);
-    return 0;
+    hal_wrapper_close(0, nfc_mode);
   }
 
   dev.p_cback = p_cback;  // will be replaced by wrapper version
