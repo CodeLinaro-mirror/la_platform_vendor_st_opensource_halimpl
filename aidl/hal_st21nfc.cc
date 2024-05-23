@@ -19,6 +19,12 @@
  *NCI version)
  *
  ******************************************************************************/
+/*
+ * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
+ *
+ * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
 
 #include <android-base/properties.h>
 #include <dlfcn.h>
@@ -30,9 +36,9 @@
 #include "hal_config.h"
 #include "halcore.h"
 #include "st21nfc_dev.h"
-
+#ifdef NFC_SECURE_PERIPHERAL_ENABLED
 #include "phNfcDynamicProtection.h"
-
+#endif
 #define VENDOR_LIB_PATH "/vendor/lib64/"
 #define VENDOR_LIB_EXT ".so"
 
@@ -70,6 +76,9 @@ extern void hal_wrapper_nfceeModeSetSent(uint8_t id, uint8_t mode);
 extern void hal_wrapper_unblockFwLogs();
 extern int hal_wrapper_send_config(int skip);
 extern void hal_wrapper_factoryReset();
+
+/*check HAL secure status*/
+extern bool checkNfcSecureStatus_HAL();
 
 /* Make sure to always post nfc_stack_callback_t in a separate thread.
 This prevents a possible deadlock in upper layer on some sequences.
@@ -277,12 +286,10 @@ static void async_callback_post(nfc_event_t event, nfc_status_t event_status) {
 int StNfc_hal_open(nfc_stack_callback_t* p_cback,
                    nfc_stack_data_callback_t* p_data_cback) {
   bool result = false;
-  if(get_board_msm_id()) {
-    if((checkNfcSecureStatus() == 1)) {
-      (*p_cback)(HAL_NFC_OPEN_CPLT_EVT, HAL_NFC_STATUS_FAILED);
-      (void)pthread_mutex_unlock(&hal_mtx);
-      return -1;
-    }
+
+  if(checkNfcSecureStatus_HAL()){
+	  (*p_cback)(HAL_NFC_OPEN_CPLT_EVT, HAL_NFC_STATUS_FAILED);
+	  return -1;
   }
   STLOG_HAL_D("HAL st21nfc: %s %s", __func__, halVersion);
 

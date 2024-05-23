@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+* Copyright (c) 2022,2024 Qualcomm Innovation Center, Inc. All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
 * modification, are permitted (subject to the limitations in the
@@ -32,6 +32,7 @@
 * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#ifdef NFC_SECURE_PERIPHERAL_ENABLED
 #include <linux/ioctl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -60,3 +61,4 @@ uint8_t checkNfcSecureStatus();
 int notifyNfcDriver(int opt);
 int register_routine(uint32_t pUID);
 bool get_board_msm_id(void);
+#endif
