@@ -65,50 +65,51 @@ cc_library_static {
   owner: "st",
 
   cflags : [
+    "-DST21NFC",
+    "-DST21NFC_DTA",
     "-Wall",
     "-Werror",
     "-Wextra",
   ],
 
-      srcs :
-      [
-        "adaptation/android_logmsg.cpp",
-        "adaptation/config.cpp",
-        "adaptation/i2clayer.cc",
-        "hal/halcore.cc",
-        "hal_wrapper.cc",
-        "hal/hal_fd.cc",
-        "hal/hal_auth.cc",
-        "hal/loader_st21nfcd_RA7.c",
-        "hal/loader_st21nfcd_RA9.c",
-        "dynamic_protection/phNfcDynamicProtection.cc",
-      ],
+  srcs : [
+    "adaptation/android_logmsg.cpp",
+    "adaptation/config.cpp",
+    "adaptation/i2clayer.cc",
+    "hal/halcore.cc",
+    "hal_wrapper.cc",
+    "hal/hal_fwlog.cc",
+    "hal/hal_fd.cc",
+    "hal/hal_auth.cc",
+    "hal/loader_st21nfcd_RA7.c",
+    "hal/loader_st21nfcd_RA9.c",
+    "dynamic_protection/phNfcDynamicProtection.cc",
+  ],
 
-      local_include_dirs :
-      [
-        "gki/ulinux",
-        "hal",
-        "include",
-        "dynamic_protection",
-      ],
+  local_include_dirs : [
+    "gki/ulinux",
+    "hal",
+    "include",
+    "dynamic_protection",
+  ],
 
-      export_include_dirs :
-      [
-        "include",
-        "gki/ulinux",
-        "dynamic_protection",
-      ],
-      shared_libs : [
-        "libbase",
-        "libcutils",
-        "libhardware",
-        "libhardware_legacy",
-        "libhidlbase",
-        "liblog",
-        "libutils",
-      ],
-      header_libs: [
-        "peripheralstate_headers",
-        "mink_headers",
-      ],
+  export_include_dirs : [
+    "include",
+    "gki/ulinux",
+    "dynamic_protection",
+  ],
+
+  shared_libs : [
+    "libbase",
+    "libcutils",
+    "libhardware",
+    "libhardware_legacy",
+    "libhidlbase",
+    "liblog",
+    "libutils",
+  ],
+  header_libs: [
+    "peripheralstate_headers",
+    "mink_headers",
+  ],
 }
