@@ -1,5 +1,5 @@
 # Enable build support for NFC open source vendor modules
-ifeq ($(call is-board-platform-in-list, pineapple),true)
+ifeq ($(call is-board-platform-in-list, pineapple volcano),true)
 TARGET_USES_STM_NFC := true
 endif
 
@@ -17,8 +17,21 @@ PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.hardware.nfc.uicc.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.nfc.uicc.xml \
     vendor/st/opensource/halimpl/conf/libnfc-hal-st.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-hal-st.conf \
     vendor/st/opensource/halimpl/conf/libnfc-hal-st-557_mtp.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-hal-st-557_mtp.conf \
-    vendor/st/opensource/halimpl/conf/libnfc-hal-st-614_mtp.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-hal-st-614_mtp.conf
-
+    vendor/st/opensource/halimpl/conf/libnfc-hal-st-614_mtp.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-hal-st-614_mtp.conf \
+    vendor/st/opensource/halimpl/conf/libnfc-hal-st-636_mtp.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-hal-st-636_mtp.conf
 PRODUCT_PACKAGES += $(STM_VENDOR_NFC)
 endif
 
+ifeq ($(call is-board-platform-in-list, pineapple),true)
+TARGET_ENABLE_PERIPHERAL_CONTROL := true
+ifeq ($(TARGET_ENABLE_PERIPHERAL_CONTROL), true)
+    $(call soong_config_set,nfc,board_secure_peripheral_framework,pineapple)
+endif
+endif
+
+ifeq ($(call is-board-platform-in-list, volcano),true)
+TARGET_ENABLE_PERIPHERAL_CONTROL := false
+ifeq ($(TARGET_ENABLE_PERIPHERAL_CONTROL), true)
+    $(call soong_config_set,nfc,board_secure_peripheral_framework,pineapple)
+endif
+endif

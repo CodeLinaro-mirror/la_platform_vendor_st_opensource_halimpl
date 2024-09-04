@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+* Copyright (c) 2022,2024 Qualcomm Innovation Center, Inc. All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
 * modification, are permitted (subject to the limitations in the
@@ -31,6 +31,8 @@
 * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+
+#ifdef NFC_SECURE_PERIPHERAL_ENABLED
 #define LOG_TAG "PeripheralDynamicProtection"
 #include "phNfcDynamicProtection.h"
 #include <hardware/nfc.h>
@@ -315,3 +317,4 @@ on_error:
   status = -1;
   return status;
 }
+#endif

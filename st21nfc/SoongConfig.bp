@@ -1,0 +1,12 @@
+soong_config_module_type {
+    name: "nfc_cc_defaults",
+    module_type: "cc_defaults",
+    config_namespace: "nfc",
+    variables: ["board_secure_peripheral_framework"],
+    properties: ["cflags"],
+}
+
+soong_config_string_variable {
+    name: "board_secure_peripheral_framework",
+    values: ["pineapple","volcano"],
+}

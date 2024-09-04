@@ -12,6 +12,25 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+soong_config_module_type_import {
+    from: "vendor/st/opensource/halimpl/st21nfc/SoongConfig.bp",
+    module_types: ["nfc_cc_defaults"],
+}
+
+nfc_cc_defaults {
+    name: "nfc-st-defaults-instance",
+    soong_config_variables: {
+        board_secure_peripheral_framework: {
+            pineapple: {
+                cflags: ["-DNFC_SECURE_PERIPHERAL_ENABLED"],
+            },
+            volcano: {},
+            conditions_default: {},
+        },
+    },
+}
+
 cc_library_shared{
   name : "nfc_nci.st21nfc.st",
   defaults : ["hidl_defaults"],
@@ -41,7 +60,8 @@ cc_library_shared{
 
 cc_library_static {
   name : "nfc_nci.st21nfc.st.static",
-  defaults : ["hidl_defaults"],
+  defaults : ["hidl_defaults",
+              "nfc-st-defaults-instance"],
   vendor : true,
   owner: "st",
 
