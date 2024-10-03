@@ -12,6 +12,14 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+package {
+    // http://go/android-license-faq
+    // A large-scale-change added 'default_applicable_licenses' to import
+    // the below license kinds from "vendor_st_nfc_hardware_st_nfc_license":
+    //   SPDX-license-identifier-Apache-2.0
+    default_applicable_licenses: ["vendor_st_nfc_hardware_st_nfc_license"],
+}
+
 
 soong_config_module_type_import {
     from: "vendor/st/opensource/halimpl/st21nfc/SoongConfig.bp",
@@ -29,32 +37,31 @@ nfc_cc_defaults {
         },
     },
 }
-
 cc_library_shared{
   name : "nfc_nci.st21nfc.st",
   defaults : ["hidl_defaults"],
   vendor : true,
   owner: "st",
 
-  export_include_dirs : [
-    "include",
-    "gki/ulinux",
-    "hal",
-  ],
+    export_include_dirs: [
+        "include",
+        "gki/ulinux",
+        "hal",
+    ],
 
-  whole_static_libs : [
-    "nfc_nci.st21nfc.st.static",
-  ],
+    whole_static_libs: [
+        "nfc_nci.st21nfc.st.static",
+    ],
 
-  shared_libs : [
-    "libbase",
-    "libcutils",
-    "libhardware",
-    "libhardware_legacy",
-    "libhidlbase",
-    "liblog",
-    "libutils",
-  ],
+    shared_libs: [
+        "libbase",
+        "libcutils",
+        "libhardware",
+        "libhardware_legacy",
+        "libhidlbase",
+        "liblog",
+        "libutils",
+    ],
 }
 
 cc_library_static {
@@ -64,27 +71,26 @@ cc_library_static {
   vendor : true,
   owner: "st",
 
-  cflags : [
-    "-DST21NFC",
-    "-DST21NFC_DTA",
-    "-Wall",
-    "-Werror",
-    "-Wextra",
-  ],
+    cflags: [
+        "-Wall",
+        "-Werror",
+        "-Wextra",
+    ],
 
-  srcs : [
-    "adaptation/android_logmsg.cpp",
-    "adaptation/config.cpp",
-    "adaptation/i2clayer.cc",
-    "hal/halcore.cc",
-    "hal_wrapper.cc",
-    "hal/hal_fwlog.cc",
-    "hal/hal_fd.cc",
-    "hal/hal_auth.cc",
-    "hal/loader_st21nfcd_RA7.c",
-    "hal/loader_st21nfcd_RA9.c",
-    "dynamic_protection/phNfcDynamicProtection.cc",
-  ],
+    srcs: [
+        "adaptation/android_logmsg.cpp",
+        "adaptation/config.cpp",
+        "adaptation/i2clayer.cc",
+        "hal/halcore.cc",
+        "hal/hal_replay.cc",
+        "hal_wrapper.cc",
+        "hal/hal_fwlog.cc",
+        "hal/hal_fd.cc",
+        "hal/hal_auth.cc",
+        "hal/loader_st21nfcd_RA7.c",
+        "hal/loader_st21nfcd_RA9.c",
+        "dynamic_protection/phNfcDynamicProtection.cc",
+    ],
 
   local_include_dirs : [
     "gki/ulinux",
@@ -93,23 +99,24 @@ cc_library_static {
     "dynamic_protection",
   ],
 
+
   export_include_dirs : [
     "include",
     "gki/ulinux",
     "dynamic_protection",
   ],
 
-  shared_libs : [
-    "libbase",
-    "libcutils",
-    "libhardware",
-    "libhardware_legacy",
-    "libhidlbase",
-    "liblog",
-    "libutils",
-  ],
+    shared_libs: [
+        "libbase",
+        "libcutils",
+        "libhardware",
+        "libhardware_legacy",
+        "libhidlbase",
+        "liblog",
+        "libutils",
+ ],
   header_libs: [
     "peripheralstate_headers",
     "mink_headers",
-  ],
+    ],
 }
