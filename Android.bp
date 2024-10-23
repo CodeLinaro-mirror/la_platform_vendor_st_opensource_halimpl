@@ -37,21 +37,22 @@ cc_library_static {
        ],
     vendor : true,
     owner: "st",
-    cflags : [
+
+    cflags: [
         "-DST21NFC",
         "-DST21NFC_DTA",
         "-Wall",
         "-Werror",
         "-Wextra",
-        ],
+    ],
 
-     srcs : ["1.2/hal_st21nfc.cc"],
+    srcs: ["1.2/hal_st21nfc.cc"],
 
-     whole_static_libs :[
+    whole_static_libs: [
         "nfc_nci.st21nfc.st.static",
-        ],
+    ],
 
-     shared_libs : [
+    shared_libs: [
         "libbase",
         "libcutils",
         "libhardware",
@@ -61,5 +62,5 @@ cc_library_static {
         "android.hardware.nfc@1.1",
         "android.hardware.nfc@1.2",
         "libhidlbase",
-        ],
+      ],
 }

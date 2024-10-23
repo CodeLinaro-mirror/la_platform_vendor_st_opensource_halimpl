@@ -26,6 +26,7 @@
 #include <string.h>
 #include "android_logmsg.h"
 #include "halcore.h"
+#include "hal_fd.h"
 
 extern void DispHal(const char* title, const void* data, size_t length);
 
@@ -48,13 +49,18 @@ uint8_t handlePollingLoopData(uint8_t format, uint8_t* tlvBuffer,
     ts = (uint32_t)(((timestamp * 128) / 28) + 0.5);
   }
 
+  if ((format & 0x1) == 0 || data_len < 6) {
+    // TLV without timestamp"
+    ts = 0;
+  }
+
   int t = tlvBuffer[0];
 
   switch (t) {
     case T_fieldOn:
     case T_fieldOff:
       STLOG_HAL_D("%s - FieldOn/Off", __func__);
-      *NewTlv = (uint8_t*)malloc(8 * sizeof(uint8_t));
+      *NewTlv = (uint8_t*)malloc(9 * sizeof(uint8_t));
       value_len = 0x06;
       (*NewTlv)[0] = TYPE_REMOTE_FIELD;
       (*NewTlv)[1] = flag;
@@ -69,16 +75,36 @@ uint8_t handlePollingLoopData(uint8_t format, uint8_t* tlvBuffer,
     case T_CERxError:
     case T_CERx: {
       STLOG_HAL_D("%s - T_CERx", __func__);
-      int tlv_size = tlvBuffer[1] - 2;
-      if ((tlv_size < 9) || (tlvBuffer[5] != 0)) {
+      int offset = 0;
+      if (hal_fd_getFwInfo()->chipHwVersion == HW_NFCD) {
+        offset = -1;
+      }
+      int tlv_size = 8 + tlvBuffer[1] - (6 + offset) - ((format & 0x1) ? 4 : 0);
+
+      if (tlv_size < 9) {
         tlv_size = 8;
       }
+
+      // work-around type-A short frame notification bug
+      if (hal_fd_getFwInfo()->chipHwVersion == HW_ST54J &&
+          (tlvBuffer[2] & 0xF) == 0x01 &&  // short frame
+          tlvBuffer[5] == 0x00 &&          // no error
+          tlvBuffer[6] == 0x0F             // incorrect real size
+      ) {
+        tlv_size = 9;
+      }
+
       value_len = tlv_size - 3;
       *NewTlv = (uint8_t*)malloc(tlv_size * sizeof(uint8_t));
       uint8_t gain;
       uint8_t type;
       int length_value = tlv_size - 8;
-      gain = (tlvBuffer[3] & 0xF0) >> 4;
+
+      if (hal_fd_getFwInfo()->chipHwVersion == HW_NFCD) {
+        gain = tlvBuffer[3];
+      } else {
+        gain = (tlvBuffer[3] & 0xF0) >> 4;
+      }
 
       switch (tlvBuffer[2] & 0xF) {
         case 0x1:
@@ -109,6 +135,10 @@ uint8_t handlePollingLoopData(uint8_t format, uint8_t* tlvBuffer,
           type = TYPE_UNKNOWN;
           break;
       }
+      if (tlvBuffer[5 + offset] != 0) {
+        // if error flag is set, consider the frame as unknown.
+        type = TYPE_UNKNOWN;
+      }
       (*NewTlv)[0] = type;
       (*NewTlv)[1] = flag;
       (*NewTlv)[2] = value_len;
@@ -118,7 +148,8 @@ uint8_t handlePollingLoopData(uint8_t format, uint8_t* tlvBuffer,
       (*NewTlv)[6] = ts & 0xFF;
       (*NewTlv)[7] = gain;
       if (tlv_size > 8) {
-        memcpy(*NewTlv + 8, tlvBuffer + 8, length_value);
+        uint8_t* tBuf = tlvBuffer + 8 + offset;
+        memcpy(*NewTlv + 8, tBuf, length_value);
       }
     } break;
     default:
