@@ -64,6 +64,7 @@ typedef enum
 {
   TARGET_SM_LANAI                      = 557, /**< SM_LANAI target */
   TARGET_SMP_LANAI                     = 577, /**< SMP_LANAI target */
+  TARGET_SGP_LANAI                     = 682, /**< SGP_LANAI target */
 }TARGETTYPE;
 
 using namespace ::std;
