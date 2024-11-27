@@ -19,7 +19,8 @@ PRODUCT_COPY_FILES += \
     vendor/st/opensource/halimpl/conf/libnfc-hal-st-618_mtp.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-hal-st-618_mtp.conf \
     vendor/st/opensource/halimpl/conf/libnfc-hal-st-618_qrd.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-hal-st-618_qrd.conf \
     vendor/st/opensource/halimpl/conf/libnfc-hal-st-655_mtp.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-hal-st-655_mtp.conf \
-    vendor/st/opensource/halimpl/conf/libnfc-hal-st-655_qrd.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-hal-st-655_qrd.conf
+    vendor/st/opensource/halimpl/conf/libnfc-hal-st-655_qrd.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-hal-st-655_qrd.conf \
+    vendor/st/opensource/halimpl/conf/libnfc-hal-st-659_mtp.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-hal-st-659_mtp.conf
 
 PRODUCT_PACKAGES += $(STM_VENDOR_NFC)
 endif
