@@ -48,6 +48,7 @@ extern bool I2cOpenLayer(void* dev, HAL_CALLBACK callb, HALHANDLE* pHandle);
 extern void I2cCloseLayer();
 extern void I2cRecovery();
 extern int i2cNfccMayUseEse(int use);
+extern int i2cNfccOnOff(int state);
 
 static void halWrapperDataCallback(uint16_t data_len, uint8_t* p_data);
 void halWrapperCallback(uint8_t event, uint8_t event_status);
@@ -185,6 +186,11 @@ bool hal_wrapper_open(st21nfc_dev_t* dev, nfc_stack_callback_t* p_cback,
     return -1;  // We are doomed, stop it here, NOW !
   }
 
+  /* enable NFCC */
+  if (i2cNfccOnOff(1) != 0) {
+    STLOG_HAL_W("NFC-NCI HAL: %s  NFC on Event failed", __func__);
+  }
+
   isDebuggable = property_get_int32("ro.debuggable", 0);
   *pHandle = mHalHandle;
 
@@ -232,6 +238,9 @@ int hal_wrapper_close(int call_cb, int nfc_mode) {
   if (nfc_mode == 0x00) {
     if (i2cNfccMayUseEse(0) != 0) {
       STLOG_HAL_W("NFC-NCI HAL: %s  i2cNfccMayUseEse(0) failed", __func__);
+    }
+    if (i2cNfccOnOff(0) != 0) {
+      STLOG_HAL_W("NFC-NCI HAL: %s  NFC OFF event failed", __func__);
     }
   }
 
