@@ -60,6 +60,9 @@ bool mAscii;
 #define MAX_SOC_INFO_NAME_LEN (15)
 #define MAX_SUFFIX_NAME_LEN (30)
 
+static char qrd_target_name[MAX_SOC_INFO_NAME_LEN] = "QRD";
+static char mtp_target_name[MAX_SOC_INFO_NAME_LEN] = "MTP";
+
 using namespace ::std;
 
 void findConfigFile(const string& configName, string& filePath);
@@ -178,6 +181,12 @@ int CNfcConfig::getconfiguration_id(char* config_file) {
   if (rc < 0) {
     ALOGE("get_soc_info(HW_PLATFORM) fail!\n");
     return -1;
+  }
+
+  //Making default target as MTP for others except QRD
+  if(strncmp(qrd_target_name, target_type, MAX_SOC_INFO_NAME_LEN) != 0)
+  {
+	  strlcpy(target_type, mtp_target_name, MAX_SOC_INFO_NAME_LEN);
   }
 
   // Converting the HW_PLATFORM detail that is read from target to lowercase
