@@ -67,6 +67,7 @@
 #define ST21NFC_RECOVERY _IO(ST21NFC_MAGIC, 0x08)
 
 #define ST21NFC_USE_ESE _IOW(ST21NFC_MAGIC, 0x09, unsigned int)
+#define ST21NFC_ON_OFF _IOR(ST21NFC_MAGIC, 0x14, unsigned int)
 //------- end from st21nfc.h in kernel driver
 #define LINUX_DBGBUFFER_SIZE 300
 
@@ -549,6 +550,21 @@ static int i2cRecovery(int fid) {
 
   return result;
 } /* i2cRecovery*/
+
+/**
+ * Signal kernel driver that the NFCC On and OFF
+ */
+int i2cNfccOnOff(int state) {
+  int result = -1;
+  int nfc_on_off = (state ? 1 : 0);
+
+  if (-1 == (result = ioctl(fidI2c, ST21NFC_ON_OFF, &nfc_on_off))) {
+    result = -1;
+  }
+  STLOG_HAL_D("i2cNfcc On/Off(%d), result = %d", state, result);
+  return result;
+} /* i2cNfccOnOff */
+
 
 /**
  * Signal kernel driver that the NFCC may or may not use the eSE
