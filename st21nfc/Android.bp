@@ -33,6 +33,9 @@ nfc_cc_defaults {
             sun: {
                 cflags: ["-DNFC_SECURE_PERIPHERAL_ENABLED"],
             },
+            canoe: {
+                cflags: ["-DNFC_SECURE_PERIPHERAL_ENABLED"],
+            },
             conditions_default: {},
         },
     },
