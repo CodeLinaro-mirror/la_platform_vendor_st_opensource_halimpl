@@ -550,41 +550,41 @@ int HalReplayAuto() {
 /*****************************************************************************/
 void HalGetNextTxData(char* line) {
   int i, byte_count = 0;
-
+  char *save_ptr = line;
   fgetpos(mReplayFile, &mFilePos);
   do {
     if (strstr(line, " Tx ") != NULL) {
-      char* token = strtok(line, " ");
+      char* token = strtok_r(line, " ", &save_ptr);
       while (token != NULL) {
         if (strcmp(token, "Tx") == 0) {
           for (i = 0; i < 3; i++) {
-            token = strtok(NULL, " ");
+            token = strtok_r(NULL, " ", &save_ptr);
             sscanf(token, "%02X", (int*)&mExpTxData[byte_count++]);
           }
           mExpTxDataSize = mExpTxData[2] + 3;
-          token = strtok(NULL, " ");
+          token = strtok_r(NULL, " ", &save_ptr);
           while (byte_count < mExpTxDataSize) {
             if ((token != NULL) && (!isspace(*token))) {
               sscanf(token, "%02X", (int*)&mExpTxData[byte_count++]);
             }
-            token = strtok(NULL, " ");
+            token = strtok_r(NULL, " ", &save_ptr);
             if ((token == NULL) && (byte_count < mExpTxDataSize)) {
               fgets(line, MAX_LINE_LENGTH, mReplayFile);
               if (strstr(line, " tx ") != NULL) {
-                token = strtok(line, " ");
+                token = strtok_r(line, " ", &save_ptr);
                 while (token != NULL) {
                   if (strcmp(token, "tx") == 0) {
-                    token = strtok(NULL, " ");
+                    token = strtok_r(NULL, " ", &save_ptr);
                     break;
                   }
-                  token = strtok(NULL, " ");
+                  token = strtok_r(NULL, " ", &save_ptr);
                 }
               }
             }
           }
           break;
         }
-        token = strtok(NULL, " ");
+        token = strtok_r(NULL, " ", &save_ptr);
       }
       // We had found a Tx line, we can stop going through the lines
       break;
@@ -603,8 +603,9 @@ void HalGetNextTxData(char* line) {
 void extract_frame(char* line, bool isTx) {
   int hour = 0, minute = 0, second = 0, millisecond = 0, i;
   int byte_count = 0;
-  char* token = strtok(line, " ");
-  char* time_str = strtok(NULL, " ");
+  char *save_ptr = line;
+  char* token = strtok_r(line, " ", &save_ptr);
+  char* time_str = strtok_r(NULL, " ", &save_ptr);
   sscanf(time_str, "%d:%d:%d.%3d", &hour, &minute, &second, &millisecond);
 
   if (isTx) {
@@ -617,26 +618,26 @@ void extract_frame(char* line, bool isTx) {
     while (token != NULL) {
       if (strcmp(token, "Rx") == 0) {
         for (i = 0; i < 3; i++) {
-          token = strtok(NULL, " ");
+          token = strtok_r(NULL, " ", &save_ptr);
           sscanf(token, "%02X", (int*)&mRxData[byte_count++]);
         }
         mRxDataSize = mRxData[2] + 3;
-        token = strtok(NULL, " ");
+        token = strtok_r(NULL, " ", &save_ptr);
         while (byte_count < mRxDataSize) {
           if ((token != NULL) && (!isspace(*token))) {
             sscanf(token, "%02X", (int*)&mRxData[byte_count++]);
           }
-          token = strtok(NULL, " ");
+          token = strtok_r(NULL, " ", &save_ptr);
           if ((token == NULL) && (byte_count < mRxDataSize)) {
             fgets(line, MAX_LINE_LENGTH, mReplayFile);
             if (strstr(line, " rx ") != NULL) {
-              token = strtok(line, " ");
+              token = strtok_r(line, " ", &save_ptr);
               while (token != NULL) {
                 if (strcmp(token, "rx") == 0) {
-                  token = strtok(NULL, " ");
+                  token = strtok_r(NULL, " ", &save_ptr);
                   break;
                 }
-                token = strtok(NULL, " ");
+                token = strtok_r(NULL, " ", &save_ptr);
               }
             } else if (strstr(line, " Tx ") != NULL) {
               mIsEmbeddedTx = true;
@@ -645,7 +646,7 @@ void extract_frame(char* line, bool isTx) {
         }
         break;
       }
-      token = strtok(NULL, " ");
+      token = strtok_r(NULL, " ", &save_ptr);
     }
     // Restore the position at just after initial line read
     fsetpos(mReplayFile, &mFilePos);
