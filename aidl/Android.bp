@@ -16,6 +16,7 @@ cc_binary {
     cflags: [
         "-Wall",
         "-Wextra",
+	"-DLAZY_SERVICE",
     ],
     shared_libs: [
         "libbase",

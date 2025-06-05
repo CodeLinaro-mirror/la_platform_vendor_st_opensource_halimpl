@@ -34,6 +34,12 @@ using ::aidl::android::hardware::nfc::Nfc;
 
 typedef int (*STEseReset)(void);
 
+#ifdef LAZY_SERVICE
+const bool kLazyService = true;
+#else
+const bool kLazyService = false;
+#endif
+
 int main() {
   void* stdll = nullptr;
   LOG(INFO) << "NFC AIDL HAL Service is starting up";
@@ -66,11 +72,20 @@ int main() {
   std::shared_ptr<Nfc> nfc_service = ndk::SharedRefBase::make<Nfc>();
 
   const std::string instance = std::string() + Nfc::descriptor + "/default";
-
+  LOG(ERROR) << "NFC instance : " << instance;
+  if (kLazyService)
+  {
+      LOG(INFO) << "Nfc Registering Lazy service: %s" << instance.c_str();
   binder_status_t status = AServiceManager_registerLazyService(
       nfc_service->asBinder().get(), instance.c_str());
   CHECK_EQ(status, STATUS_OK) << "Failed to register LAZY NFC HAL";
-
+  } else
+  {
+      LOG(INFO) << "Nfc Registering service: %s" << instance.c_str();
+      binder_status_t status = AServiceManager_addService(
+          nfc_service->asBinder().get(), instance.c_str());
+      CHECK_EQ(status, STATUS_OK) << "Failed to register NFC HAL";
+  }
   ABinderProcess_joinThreadPool();
   return 0;
 }
