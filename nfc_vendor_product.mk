@@ -1,6 +1,6 @@
 # Enable build support for NFC open source vendor modules
 ifeq ($(call is-board-platform-in-list, kalama),true)
-TARGET_USES_STM_NFC := true
+TARGET_USES_STM_NFC := false
 endif
 
 STM_VENDOR_NFC := android.hardware.nfc@1.2-service-st
