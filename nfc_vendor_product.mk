@@ -17,7 +17,9 @@ PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.hardware.nfc.uicc.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.nfc.uicc.xml \
     vendor/st/opensource/halimpl/conf/libnfc-hal-st.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-hal-st.conf \
     vendor/st/opensource/halimpl/conf/libnfc-hal-st-660_mtp.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-hal-st-660_mtp.conf \
-    vendor/st/opensource/halimpl/conf/libnfc-hal-st-660_qrd.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-hal-st-660_qrd.conf
+    vendor/st/opensource/halimpl/conf/libnfc-hal-st-660_qrd.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-hal-st-660_qrd.conf \
+    vendor/st/opensource/halimpl/conf/libnfc-hal-st-685_mtp.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-hal-st-685_mtp.conf \
+    vendor/st/opensource/halimpl/conf/libnfc-hal-st-685_qrd.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-hal-st-685_qrd.conf
 
 PRODUCT_PACKAGES += $(STM_VENDOR_NFC)
 endif

@@ -12,8 +12,6 @@ service nfc_hal_service /vendor/bin/hw/android.hardware.nfc-service-st
     user nfc
     group nfc oem_2912
     # AIDL interfaces
-    #interface aidl android.hardware.nfc.INfc/default
+    interface aidl android.hardware.nfc.INfc/default
     # don't auto restart
-    #oneshot
-    # start only when requested
-    #disabled
+    oneshot
