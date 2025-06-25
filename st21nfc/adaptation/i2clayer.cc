@@ -609,7 +609,8 @@ static int i2cWrite(int fid, const uint8_t* pvBuffer, int length) {
   (void)pthread_mutex_unlock(&sTsLock);
 
 redo:
-  while (retries < 3) {
+/*Increasing retries attempt by 5 to fix timout (leading to abort crash) */ 
+  while (retries < 5) {
     result = write(fid, pvBuffer, length);
 
     if (result < 0) {
@@ -707,13 +708,14 @@ static int i2cRead(int fid, uint8_t* pvBuffer, int length) {
     }
 
     if (result < 0) {
-      if (retries < 3) {
+    /*Increasing retries attempt by 5 to fix timout (leading to abort crash) */ 
+      if (retries < 5) {
         /* delays are different and increasing for the three retries. */
-        static const uint8_t delayTab[] = {2, 3, 5};
+        static const uint8_t delayTab[] = {2, 3, 5, 6, 7};
         int delay = delayTab[retries];
 
         retries++;
-        STLOG_HAL_W("## i2cRead retry %d/3 in %d milliseconds.", retries,
+        STLOG_HAL_W("## i2cRead retry %d/5 in %d milliseconds.", retries,
                     delay);
         usleep(delay * 1000);
         continue;
