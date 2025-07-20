@@ -520,11 +520,6 @@ static bool stpropnci_prop_st_cb_apdu_gate_transceive(
   paylen = pp++;
   UINT8_TO_STREAM(pp, ST_PROP_NCI_TRANSCEIVE_ADPU_GATE);
   UINT8_TO_STREAM(pp, NFC_STATUS_OK);
-
-  if (payloadlen < 2) {
-    LOG_E("payload cannot convert array to stream");
-    return false;
-  }
   if (instruction == EVT_TRANSMIT_DATA) {
     ARRAY_TO_STREAM(pp, (payload + 2), payloadlen - 2);
   }
