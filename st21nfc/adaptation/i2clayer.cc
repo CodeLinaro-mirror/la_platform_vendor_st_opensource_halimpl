@@ -397,7 +397,7 @@ bool I2cOpenLayer(void* dev, HAL_CALLBACK callb, HALHANDLE* pHandle) {
   if (!GetStrValue(NAME_ST_NFC_DEV_NODE, (char*)nfc_dev_node,
                    sizeof(nfc_dev_node))) {
     STLOG_HAL_D("Open /dev/st21nfc\n");
-    strcpy(nfc_dev_node, "/dev/st21nfc");
+    strlcpy(nfc_dev_node, "/dev/st21nfc", sizeof(nfc_dev_node));
   }
   /*Read nfcc reset request sysfs*/
   if (GetStrValue(NAME_ST_NFC_RESET_REQ_SYSFS, (char*)nfc_reset_req_node,

@@ -714,7 +714,7 @@ int HalGetNextFrameInfo() {
       {
         // replace the content in the logcat otherwise the parser is lost
         char linefordump[MAX_LINE_LENGTH];
-        strncpy(linefordump, line, sizeof(linefordump));
+        strlcpy(linefordump, line, sizeof(linefordump));
         for (int i = 0;
              (i < (int)sizeof(linefordump) - 1) && (linefordump[i] != '\0');
              i++) {
@@ -767,7 +767,7 @@ int HalGetNextFrameInfo() {
       {
         // replace the content in the logcat otherwise the parser is lost
         char linefordump[MAX_LINE_LENGTH];
-        strncpy(linefordump, line, sizeof(linefordump));
+        strlcpy(linefordump, line, sizeof(linefordump));
         for (int i = 0;
              (i < (int)sizeof(linefordump) - 1) && (linefordump[i] != '\0');
              i++) {
