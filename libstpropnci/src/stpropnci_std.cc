@@ -21,6 +21,9 @@
 #include <stpropnci-internal.h>
 #include <nfc_api.h>
 
+static void stpropnci_process_core_reset_ntf(const uint8_t *payload,
+                                             const uint16_t payloadlen);
+
 /*******************************************************************************
 **
 ** Function         stpropnci_process_std
@@ -42,6 +45,10 @@ bool stpropnci_process_std(bool inform_only, bool dir_from_upper,
 
   if (inform_only) {
     // Process the updates as needed
+    if ((mt == NCI_MT_NTF) && (gid == NCI_GID_CORE) &&
+        (oid == NCI_MSG_CORE_RESET)) {
+      stpropnci_process_core_reset_ntf(payload, payloadlen);
+    }
 
     return false;
   }
@@ -53,10 +60,23 @@ bool stpropnci_process_std(bool inform_only, bool dir_from_upper,
         if (dir_from_upper == MSG_DIR_FROM_STACK) {
           // save the timestamp
           (void)clock_gettime(CLOCK_MONOTONIC, &stpropnci_state.ts_last_rf_tx);
+          if (stpropnci_state.is_reader_activation && (payloadlen == 3)) {
+            stpropnci_state.is_tx_empty_iframe = true;
+          }
         } else {
           // clear timestamp
           memset(&stpropnci_state.ts_last_rf_tx, 0,
                  sizeof(stpropnci_state.ts_last_rf_tx));
+
+          if (stpropnci_state.is_reader_activation && (payloadlen == 3)) {
+            if (stpropnci_state.is_tx_empty_iframe) {
+              stpropnci_state.is_tx_empty_iframe = false;
+            } else {
+              // trash frame
+              LOG_D("Discard received empty I Frame (not pres check)");
+              handled = true;
+            }
+          }
         }
         break;
 
@@ -76,64 +96,7 @@ bool stpropnci_process_std(bool inform_only, bool dir_from_upper,
       switch (oid) {
         case NCI_MSG_CORE_RESET:
           if (mt == NCI_MT_NTF) {
-            if (payloadlen <= 8) {
-              LOG_E("CORE_RESET_NTF length too short: %d", payloadlen);
-              break;
-            }
-
-            // CORE_RESET_NTF ; copy the manuf data in the structure
-            uint8_t trigger = payload[3];
-            uint8_t manuf_id = payload[6];
-            uint8_t manuf_len = payload[7];
-
-            if (manuf_id != 0x02) {
-              LOG_E("CORE_RESET_NTF ignored, not ST: %02hhx", manuf_id);
-              break;
-            }
-
-            switch (trigger) {
-              case 0x00:
-                // Unrecoverable error
-
-                break;
-              case 0x01:  // end of boot
-              case 0x02:  // after core_reset_cmd
-                stpropnci_state.manu_specific_info_len = manuf_len;
-                if (manuf_len > sizeof(stpropnci_state.manu_specific_info)) {
-                  stpropnci_state.manu_specific_info_len =
-                      sizeof(stpropnci_state.manu_specific_info);
-                }
-                memcpy(stpropnci_state.manu_specific_info, &payload[8],
-                       stpropnci_state.manu_specific_info_len);
-                break;
-              case 0xA0:  // after PROP_SET_NFC_MODE
-                switch (payload[8 + manuf_len]) {
-                  case 0x00:
-                    stpropnci_state.clf_mode =
-                        stpropnci_state::CLF_MODE_ROUTER_DISABLED;
-                    break;
-                  case 0x01:
-                    stpropnci_state.clf_mode =
-                        stpropnci_state::CLF_MODE_ROUTER_ENABLED;
-                    break;
-                  case 0x02:
-                    stpropnci_state.clf_mode =
-                        stpropnci_state::CLF_MODE_ROUTER_USBCHARGING;
-                    break;
-                  default:
-                    // Unexpected trigger, ignore
-                    LOG_E("Unexpected mode: 0x%02hhx", payload[8 + manuf_len]);
-                    break;
-                }
-                break;
-              case 0xA2:  // Loader mode
-                stpropnci_state.clf_mode = stpropnci_state::CLF_MODE_LOADER;
-                break;
-              default:
-                // Unexpected trigger, ignore
-                LOG_E("Unexpected trigger: 0x%02hhx", trigger);
-                break;
-            }
+            stpropnci_process_core_reset_ntf(payload, payloadlen);
           }
           break;
 
@@ -209,6 +172,84 @@ bool stpropnci_process_std(bool inform_only, bool dir_from_upper,
 
     case NCI_GID_RF_MANAGE:
       switch (oid) {
+        case NCI_MSG_RF_SET_ROUTING:
+          if (mt == NCI_MT_CMD) {
+            uint8_t idx = 5;
+            uint8_t nb_entries = 0;
+            uint8_t route_a = 0x00, route_b = 0x00, idx_a = 0, idx_b = 0,
+                    idx_block, idx_f = 0, route_f = 0x00;
+            // Check routing for listen tech
+            while (nb_entries < payload[4]) {
+              // Check if entry type if tech routing
+              if ((payload[idx] & 0xF) == 0x00) {
+                if (payload[idx + 4] == NCI_RF_TECHNOLOGY_A) {
+                  idx_a = idx;
+                  route_a = payload[idx + 2];
+                } else if (payload[idx + 4] == NCI_RF_TECHNOLOGY_B) {
+                  idx_b = idx;
+                  route_b = payload[idx + 2];
+                } else if (payload[idx + 4] == NCI_RF_TECHNOLOGY_F) {
+                  idx_f = idx;
+                  route_f = payload[idx + 2];
+                }
+              }
+              idx += (payload[idx + 1] + 2);
+              nb_entries++;
+            }
+            if (stpropnci_state.is_card_a_on) {
+              LOG_D("Routing techA/B to NDEF-NFCEE");
+              memcpy(pp, payload, payloadlen);
+              // Route Tech to NDEF-NFCEE
+              // All power states
+              pp[idx_a + 2] = 0x10;
+              pp[idx_a + 3] = 0x3B;
+              pp[idx_b + 2] = 0x10;
+              pp[idx_b + 3] = 0x3B;
+
+              *buflen = payloadlen;
+              // send it
+              handled =
+                  stpropnci_pump_post(MSG_DIR_TO_NFCC, stpropnci_state.tmpbuff,
+                                      *stpropnci_state.tmpbufflen, nullptr);
+            } else {
+              memcpy(pp, payload, payloadlen);
+
+              if ((route_a != route_b) && (idx_a != 0) && (idx_b != 0)) {
+                LOG_D(
+                    "route_a=0x%x, route_b=0x%x, not same route, block tech "
+                    "routed to DH",
+                    route_a, route_b);
+                // If route is 0, means this tech was not supported by original
+                // route. This is the one we want to block.
+                if (route_a == 0x00) {
+                  idx_block = idx_a;
+                } else {
+                  idx_block = idx_b;
+                }
+                pp[idx_block] |= 0x40;
+                // No power states allowed
+                pp[idx_block + 3] = 0x00;
+              }
+
+              if (!stpropnci_state.is_ese_felica_enabled) {
+                if (route_f == 0x86 && idx_f != 0) {
+                  LOG_D("Routing techF to DH");
+                  // Route Tech F to DH
+                  // Power states: 0x11 (switched ON, screen unlocked)
+                  pp[idx_f + 2] = 0x00;
+                  pp[idx_f + 3] = 0x11;
+                }
+              }
+
+              *buflen = payloadlen;
+              // send it
+              handled =
+                  stpropnci_pump_post(MSG_DIR_TO_NFCC, stpropnci_state.tmpbuff,
+                                      *stpropnci_state.tmpbufflen, nullptr);
+            }
+          }
+          break;
+
         case NCI_MSG_RF_DISCOVER:
           if (mt == NCI_MT_NTF) {
             // Stop the field watchdog
@@ -226,6 +267,97 @@ bool stpropnci_process_std(bool inform_only, bool dir_from_upper,
             // Stop the pwr_mon watchdog
             stpropnci_pump_watchdog_remove(WD_ACTIVE_RW_TOO_LONG);
             stpropnci_state.pwr_mon_errorCount = 0;
+
+            // Check if activated in reader mode
+            if ((payload[6] < NCI_DISCOVERY_TYPE_LISTEN_A)) {
+              stpropnci_state.is_reader_activation = true;
+            } else {
+              stpropnci_state.is_reader_activation = false;
+            }
+
+            // Check custom polling activation
+            if (payload[6] == NFC_CUST_PASSIVE_POLL_MODE) {
+              int len_tp = payload[9] - 2;
+              uint8_t rf_tech_mode = NFC_DISCOVERY_TYPE_POLL_A;
+
+              // Only send the prop NTF once
+              if (!stpropnci_state.is_rf_intf_cust_tx) {
+                // Send received RF_INTF_ACTIVATED_NTF as prop OID NTF to ST OEM
+                // extensions
+                NCI_MSG_BLD_HDR0(pp, NCI_MT_NTF, NCI_GID_PROP);
+                NCI_MSG_BLD_HDR1(pp, ST_PROP_NCI_OID);
+                paylen = pp++;
+                UINT8_TO_STREAM(pp, ST_PROP_RF_INTF_ACTIV_CUST_POLL_NTF);
+                ARRAY_TO_STREAM(pp, payload + 3, payload[2]);
+                *paylen = pp - (paylen + 1);
+                *buflen = pp - buf;
+                // send it
+                stpropnci_pump_post(MSG_DIR_TO_STACK, stpropnci_state.tmpbuff,
+                                    *stpropnci_state.tmpbufflen, nullptr);
+                stpropnci_state.is_rf_intf_cust_tx = true;
+              }
+
+              // reset pointer
+              pp = buf;
+              stpropnci_tmpbuff_reset();
+
+              // Now we need to create STD RF_INTF_ACTIVATED_NTF
+              if (payload[5] != NFC_PROTOCOL_UNKNOWN) {
+                // Case CUST_POLL_STD_RESP
+                rf_tech_mode = payload[10];
+              } else {
+                // Case CUST_POLL_NOSTD_RESP
+                switch (payload[10]) {
+                  case PROP_A_POLL:
+                    rf_tech_mode = NFC_DISCOVERY_TYPE_POLL_A;
+                    break;
+                  case PROP_B_POLL:
+                    rf_tech_mode = NFC_DISCOVERY_TYPE_POLL_B;
+                    break;
+                  case PROP_F_POLL:
+                    rf_tech_mode = NFC_DISCOVERY_TYPE_POLL_F;
+                    break;
+                  case PROP_V_POLL:
+                    rf_tech_mode = NFC_DISCOVERY_TYPE_POLL_V;
+                    break;
+                  case PROP_B_NOEOFSOF_POLL:
+                    rf_tech_mode = NFC_DISCOVERY_TYPE_POLL_B;
+                    break;
+                  case PROP_B_NOSOF_POLL:
+                    rf_tech_mode = NFC_DISCOVERY_TYPE_POLL_B;
+                    break;
+                  default:
+                    LOG_E("Unknown RF tech mode: 0x%x", payload[10]);
+                    break;
+                }
+              }
+
+              NCI_MSG_BLD_HDR0(pp, NCI_MT_NTF, NCI_GID_RF_MANAGE);
+              NCI_MSG_BLD_HDR1(pp, NCI_MSG_RF_INTF_ACTIVATED);
+              paylen = pp++;
+
+              UINT8_TO_STREAM(pp, payload[3]);    // 3 - RF disc id ID
+              UINT8_TO_STREAM(pp, payload[4]);    // 4 - RF interface
+              UINT8_TO_STREAM(pp, payload[5]);    // 5 - RF protocol
+              UINT8_TO_STREAM(pp, rf_tech_mode);  // 6 - RF tech mode
+              UINT8_TO_STREAM(pp, payload[7]);    // 7 - max data payload size
+              UINT8_TO_STREAM(pp, payload[8]);    // 8 - init nb credits
+              UINT8_TO_STREAM(pp, len_tp);        // 9 - length RF tech param
+              ARRAY_TO_STREAM(pp, payload + 12,
+                              len_tp);  // 10 - RF tech param
+              UINT8_TO_STREAM(pp,
+                              rf_tech_mode);  // 10+n - data ex tch and mode
+              ARRAY_TO_STREAM(
+                  pp, payload + 13 + len_tp,
+                  payload[2] - 10 - len_tp);  // 11+n - remaining data
+
+              *paylen = pp - (paylen + 1);
+              *buflen = pp - buf;
+              // send it
+              handled =
+                  stpropnci_pump_post(MSG_DIR_TO_STACK, stpropnci_state.tmpbuff,
+                                      *stpropnci_state.tmpbufflen, nullptr);
+            }
           }
           break;
 
@@ -349,6 +481,67 @@ bool stpropnci_process_std(bool inform_only, bool dir_from_upper,
           }
           break;
 
+        case NCI_MSG_RF_EE_DISCOVERY_REQ:
+          if (mt == NCI_MT_NTF) {
+            uint8_t idx = 0;
+            if (payloadlen <= NFC_EE_DISCOVER_ENTRY_LEN) {
+              LOG_E("NCI_MSG_RF_EE_DISCOVERY_REQ length too short: %d",
+                    payloadlen);
+              break;
+            }
+            for (int i = 0; i < payload[3]; i++) {
+              idx = 0xFF;
+              // Check if info for this NFCEE Id already stored
+              for (int j = 0; j < stpropnci_state.nb_ee_info; j++) {
+                if (stpropnci_state.ee_info[j].nfcee_id == payload[6 + i * 5]) {
+                  idx = j;
+                  break;
+                }
+              }
+              if (idx == 0xFF) {
+                idx = stpropnci_state.nb_ee_info;
+                stpropnci_state.ee_info[idx].nfcee_id = payload[6 + i * 5];
+                stpropnci_state.nb_ee_info++;
+              }
+              if (payload[7 + i * 5] == NCI_DISCOVERY_TYPE_LISTEN_A) {
+                if (payload[8 + i * 5] == NFC_PROTOCOL_T2T) {
+                  if (payload[4 + i * 5] == NFC_EE_DISC_OP_ADD) {
+                    stpropnci_state.ee_info[idx].la |= NFC_PROTO_T2T_MASK;
+                  } else {
+                    stpropnci_state.ee_info[idx].la &= ~NFC_PROTO_T2T_MASK;
+                  }
+                } else if (payload[8 + i * 5] == NCI_PROTOCOL_ISO_DEP) {
+                  if (payload[4 + i * 5] == NFC_EE_DISC_OP_ADD) {
+                    stpropnci_state.ee_info[idx].la |= NFC_PROTO_T4T_MASK;
+                  } else {
+                    stpropnci_state.ee_info[idx].la &= ~NFC_PROTO_T4T_MASK;
+                  }
+                }
+              } else if (payload[7 + i * 5] == NCI_DISCOVERY_TYPE_LISTEN_B) {
+                if (payload[4 + i * 5] == NFC_EE_DISC_OP_ADD) {
+                  stpropnci_state.ee_info[idx].lb |= NFC_PROTO_T4T_MASK;
+                } else {
+                  stpropnci_state.ee_info[idx].lb &= ~NFC_PROTO_T4T_MASK;
+                }
+              } else if (payload[7 + i * 5] == NCI_DISCOVERY_TYPE_LISTEN_F) {
+                if (payload[4 + i * 5] == NFC_EE_DISC_OP_ADD) {
+                  stpropnci_state.ee_info[idx].lf |= NFC_PROTO_T3T_MASK;
+                } else {
+                  stpropnci_state.ee_info[idx].lf &= ~NFC_PROTO_T3T_MASK;
+                }
+              }
+            }
+            LOG_D("nb_ee_info=0x%x", stpropnci_state.nb_ee_info);
+            for (int i = 0; i < stpropnci_state.nb_ee_info; i++) {
+              LOG_D("nfceeId=0x%x, la=0x%x, lb=0x%x, lf=0x%x",
+                    stpropnci_state.ee_info[i].nfcee_id,
+                    stpropnci_state.ee_info[i].la,
+                    stpropnci_state.ee_info[i].lb,
+                    stpropnci_state.ee_info[i].lf);
+            }
+          }
+          break;
+
         default:
           // We are not interested in this one
           break;
@@ -413,6 +606,10 @@ bool stpropnci_process_std(bool inform_only, bool dir_from_upper,
               }
             }
             stpropnci_state.wait_nfcee_ntf = false;
+            if (stpropnci_state.is_ese_stuck) {
+              // Drop NTF due to handle recovery
+              handled = true;
+            }
           }
           break;
         case NCI_MSG_NFCEE_POWER_LINK_CTRL:
@@ -440,6 +637,77 @@ bool stpropnci_process_std(bool inform_only, bool dir_from_upper,
   }
 
   return handled;
+}
+
+/*******************************************************************************
+**
+** Function         stpropnci_process_core_reset_ntf
+**
+** Description      Save the information from a core reset ntf (chip type, fw
+*version, ...)
+**
+** Returns          n/a
+**
+*******************************************************************************/
+static void stpropnci_process_core_reset_ntf(const uint8_t *payload,
+                                             const uint16_t payloadlen) {
+  if (payloadlen <= 8) {
+    LOG_E("CORE_RESET_NTF length too short: %d", payloadlen);
+    return;
+  }
+
+  // CORE_RESET_NTF ; copy the manuf data in the structure
+  uint8_t trigger = payload[3];
+  uint8_t manuf_id = payload[6];
+  uint8_t manuf_len = payload[7];
+
+  if (manuf_id != 0x02) {
+    LOG_E("CORE_RESET_NTF ignored, not ST: %02hhx", manuf_id);
+    return;
+  }
+
+  switch (trigger) {
+    case 0x00:
+      // Unrecoverable error -- this may be forged message, ignore it
+
+      break;
+    case 0xA0:  // after PROP_SET_NFC_MODE
+      switch (payload[7 + manuf_len]) {
+        case 0x00:
+          stpropnci_state.clf_mode = stpropnci_state::CLF_MODE_ROUTER_DISABLED;
+          break;
+        case 0x01:
+          stpropnci_state.clf_mode = stpropnci_state::CLF_MODE_ROUTER_ENABLED;
+          break;
+        case 0x02:
+          stpropnci_state.clf_mode =
+              stpropnci_state::CLF_MODE_ROUTER_USBCHARGING;
+          break;
+        default:
+          // Unexpected trigger, ignore
+          LOG_E("Unexpected mode: 0x%02hhx", payload[7 + manuf_len]);
+          break;
+      }
+      [[fallthrough]];  // also save FW information
+    case 0x01:          // end of boot
+    case 0x02:          // after core_reset_cmd
+      stpropnci_state.manu_specific_info_len = manuf_len;
+      if (manuf_len > sizeof(stpropnci_state.manu_specific_info)) {
+        stpropnci_state.manu_specific_info_len =
+            sizeof(stpropnci_state.manu_specific_info);
+      }
+      memcpy(stpropnci_state.manu_specific_info, &payload[8],
+             stpropnci_state.manu_specific_info_len);
+      break;
+    case 0xA2:  // Loader mode
+      stpropnci_state.clf_mode = stpropnci_state::CLF_MODE_LOADER;
+      break;
+    default:
+      // Unexpected trigger, ignore
+      LOG_E("Unexpected trigger: 0x%02hhx", trigger);
+      break;
+  }
+  // Done
 }
 
 /*******************************************************************************
@@ -494,9 +762,12 @@ bool stpropnci_send_core_reset_ntf_recovery(uint8_t hint) {
 ** Returns          true
 **
 *******************************************************************************/
-bool stpropnci_cb_passthrough_rsp(bool dir_from_upper, const uint8_t *payload,
-                                  const uint16_t payloadlen, uint8_t mt,
-                                  uint8_t gid, uint8_t oid) {
+bool stpropnci_cb_passthrough_rsp(__attribute__((unused)) bool dir_from_upper,
+                                  const uint8_t *payload,
+                                  const uint16_t payloadlen,
+                                  __attribute__((unused)) uint8_t mt,
+                                  __attribute__((unused)) uint8_t gid,
+                                  __attribute__((unused)) uint8_t oid) {
   return stpropnci_pump_post(MSG_DIR_TO_STACK, payload, payloadlen, nullptr);
 }
 
@@ -510,9 +781,12 @@ bool stpropnci_cb_passthrough_rsp(bool dir_from_upper, const uint8_t *payload,
 ** Returns          true
 **
 *******************************************************************************/
-bool stpropnci_cb_block_rsp(bool dir_from_upper, const uint8_t *payload,
-                            const uint16_t payloadlen, uint8_t mt, uint8_t gid,
-                            uint8_t oid) {
+bool stpropnci_cb_block_rsp(__attribute__((unused)) bool dir_from_upper,
+                            __attribute__((unused)) const uint8_t *payload,
+                            __attribute__((unused)) const uint16_t payloadlen,
+                            __attribute__((unused)) uint8_t mt,
+                            __attribute__((unused)) uint8_t gid,
+                            __attribute__((unused)) uint8_t oid) {
   // Drop this response, don t forward.
   return true;
 }
