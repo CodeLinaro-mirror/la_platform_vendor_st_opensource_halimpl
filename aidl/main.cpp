@@ -63,6 +63,7 @@ int main() {
         LOG(INFO) << "STReset Result= " << ret;
       }
       LOG(INFO) << ("ST NFC HAL STReset Done.");
+      dlclose(stdll);
     }
   }
   if (!ABinderProcess_setThreadPoolMaxThreadCount(1)) {

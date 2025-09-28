@@ -72,7 +72,7 @@ NCI_HAL_MODULE="nfc_nci.st21nfc"
 
 ###############################################################################
 # White list to be set at startup.
-DEVICE_HOST_ALLOW_LIST={02:A1:A2:C0}
+DEVICE_HOST_ALLOW_LIST={02:C0}
 
 ###############################################################################
 # Extended APDU length for ISO_DEP
@@ -111,13 +111,13 @@ DEFAULT_SYS_CODE_PWR_STATE=0x3B
 STNFC_FW_PATH_STORAGE="/vendor/firmware/"
 
 # Filename of the firmware binary. Default: automatic depending on chip hardware.
-#STNFC_FW_BIN_NAME="st54l_fw.bin"
+#STNFC_FW_BIN_NAME="st21nfc_fw.bin"
 
 # Folder of the firmware configuration
 STNFC_FW_CONF_STORAGE="/vendor/etc/"
 
 # Filename of the firmware config. Default: automatic depending on chip hardware.
-#STNFC_FW_CONF_NAME="st54l_conf.txt"
+#STNFC_FW_CONF_NAME="st21nfc_conf.txt"
 
 ###############################################################################
 # Default off-host route for Felica.
@@ -149,7 +149,7 @@ DEFAULT_ROUTE=0x81
 # Configure the NFCEEIDs of offhost UICC.
 # UICC  0x81 (UICC_1), 0x83/5 (UICC_2)
 # eUICC Cat3  0x87 (profile 1), 0x89 (profile 2)
-OFFHOST_ROUTE_UICC={81,87,89}
+OFFHOST_ROUTE_UICC={81,83}
 
 # In case the eSE supports MEP Cat3 eSIM, use this instead :
 # OFFHOST_ROUTE_UICC={81:87:89}
@@ -157,7 +157,7 @@ OFFHOST_ROUTE_UICC={81,87,89}
 ###############################################################################
 # Configure the NFCEEIDs of offhost eSEs.
 # eSE   0x82 (eSE),    0x86 (eUICC/SPI-SE)
-OFFHOST_ROUTE_ESE={86}
+OFFHOST_ROUTE_ESE={82}
 
 ###############################################################################
 # Configure the list of NFCEE for the ISO-DEP routing.

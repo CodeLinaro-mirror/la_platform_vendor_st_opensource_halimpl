@@ -623,8 +623,8 @@ void HalGetNextTxData(char* line) {
 
   // restore position in the file
   fsetpos(mReplayFile, &mFilePos);
-  STLOG_HAL_V("%s; mExpTxData[] = 0x%x 0x%x", __func__, mExpTxData[0],
-              mExpTxData[1]);
+  STLOG_HAL_V("%s; mExpTxDataSize=0x%x, mExpTxData[] = 0x%x 0x%x", __func__,
+              mExpTxDataSize, mExpTxData[0], mExpTxData[1]);
 }
 
 /*****************************************************************************/
@@ -764,6 +764,9 @@ int HalGetNextFrameInfo() {
 
     // Process tx data
     if (strstr(line, " Tx ") != NULL) {
+      if (mExpTxDataSize == 0) {
+        HalGetNextTxData(line);
+      }
       {
         // replace the content in the logcat otherwise the parser is lost
         char linefordump[MAX_LINE_LENGTH];
@@ -819,6 +822,8 @@ void HalCheckTxData() {
 
   if (mExpTxDataSize != mTxDataSize) {
     mUnexpectedTxData = true;
+    STLOG_HAL_E("%s; mExpTxDataSize= 0x%x, mTxDataSize=0x%x", __func__,
+                mExpTxDataSize, mTxDataSize);
   } else {
     for (int i = 0; i < mExpTxDataSize; i++) {
       if (mExpTxData[i] != mTxData[i]) {
@@ -864,6 +869,13 @@ void HalCheckTxData() {
           "unexpected !!!!",
           __func__);
       mIsError = true;
+    } else {
+      for (int i = 0; i < mExpTxDataSize; i++) {
+        if (mExpTxData[i] != mTxData[i]) {
+          STLOG_HAL_V("%s; mExpTxData[%d]=0x%x, mTxData[%d]=0x%x", __func__, i,
+                      mExpTxData[i], i, mTxData[i]);
+        }
+      }
     }
     STLOG_HAL_V("%s; Received unexpected Tx data", __func__);
     mIsNextRx = true;
@@ -951,7 +963,6 @@ void HalReplayInit(HalInstance* inst) {
 
   if (0 != sem_init(&mTxSem, 0, 0)) {
     STLOG_HAL_E("%s; txSem init failed", __func__);
-    free(inst);
     return;
   }
 
