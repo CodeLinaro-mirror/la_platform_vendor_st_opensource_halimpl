@@ -344,7 +344,7 @@ static void* I2cWorkerThread(void* arg) {
       reset[9] = '\0';
       lseek(notifyResetRequest, 0, SEEK_SET);
       byte = read(notifyResetRequest, &reset, sizeof(reset));
-      if (byte < 10) {
+      if (byte >= 0 && byte < 10) {
         reset[byte] = '\0';
       }
       if (byte > 0 && reset[0] == '1' && resetting == false) {
@@ -397,7 +397,7 @@ bool I2cOpenLayer(void* dev, HAL_CALLBACK callb, HALHANDLE* pHandle) {
   if (!GetStrValue(NAME_ST_NFC_DEV_NODE, (char*)nfc_dev_node,
                    sizeof(nfc_dev_node))) {
     STLOG_HAL_D("Open /dev/st21nfc\n");
-    strcpy(nfc_dev_node, "/dev/st21nfc");
+    strlcpy(nfc_dev_node, "/dev/st21nfc", sizeof(nfc_dev_node));
   }
   /*Read nfcc reset request sysfs*/
   if (GetStrValue(NAME_ST_NFC_RESET_REQ_SYSFS, (char*)nfc_reset_req_node,
@@ -614,22 +614,6 @@ int i2cNfccOnOff(int state) {
   return result;
 } /* i2cNfccOnOff */
 
-
-/**
- * Signal kernel driver that the NFCC may or may not use the eSE
- * This is required to manage SE power finely when SPI is connected.
- * In other cases, this information is not used.
- */
-int i2cNfccMayUseEse(int use) {
-  int result;
-  int se_needed = (use ? 1 : 0);
-
-  if (-1 == (result = ioctl(fidI2c, ST21NFC_USE_ESE, &se_needed))) {
-    result = -1;
-  }
-  STLOG_HAL_D("i2cNfccMayUseEse(%d), result = %d", use, result);
-  return result;
-} /* i2cNfccMayUseEse */
 
 /**
  * Write data to st21nfc, on failure do max 3 retries.

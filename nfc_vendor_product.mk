@@ -1,5 +1,5 @@
 # Enable build support for NFC open source vendor modules
-ifeq ($(call is-board-platform-in-list, canoe),true)
+ifeq ($(call is-board-platform-in-list, canoe chora),true)
 TARGET_USES_STM_NFC := true
 endif
 
@@ -19,7 +19,19 @@ PRODUCT_COPY_FILES += \
     vendor/st/opensource/halimpl/conf/libnfc-hal-st-660_mtp.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-hal-st-660_mtp.conf \
     vendor/st/opensource/halimpl/conf/libnfc-hal-st-660_qrd.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-hal-st-660_qrd.conf \
     vendor/st/opensource/halimpl/conf/libnfc-hal-st-685_mtp.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-hal-st-685_mtp.conf \
-    vendor/st/opensource/halimpl/conf/libnfc-hal-st-685_qrd.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-hal-st-685_qrd.conf
+    vendor/st/opensource/halimpl/conf/libnfc-hal-st-685_qrd.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-hal-st-685_qrd.conf \
+    vendor/st/opensource/halimpl/conf/libnfc-hal-st-727_mtp.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-hal-st-727_mtp.conf \
+    vendor/st/opensource/halimpl/conf/libnfc-hal-st-727_qrd.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-hal-st-727_qrd.conf \
+    vendor/st/opensource/halimpl/conf/libnfc-hal-st-722_mtp.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-hal-st-722_mtp.conf \
+    vendor/st/opensource/halimpl/conf/libnfc-hal-st-722_qrd.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-hal-st-722_qrd.conf \
+    vendor/st/opensource/halimpl/conf/libnfc-hal-st-723_mtp.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-hal-st-723_mtp.conf \
+    vendor/st/opensource/halimpl/conf/libnfc-hal-st-723_qrd.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-hal-st-723_qrd.conf \
+    vendor/st/opensource/halimpl/conf/libnfc-hal-st-743_mtp.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-hal-st-743_mtp.conf \
+    vendor/st/opensource/halimpl/conf/libnfc-hal-st-743_qrd.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-hal-st-743_qrd.conf \
+    vendor/st/opensource/halimpl/conf/libnfc-hal-st-724_mtp.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-hal-st-724_mtp.conf \
+    vendor/st/opensource/halimpl/conf/libnfc-hal-st-724_qrd.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-hal-st-724_qrd.conf \
+    vendor/st/opensource/halimpl/conf/libnfc-hal-st-744_mtp.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-hal-st-744_mtp.conf \
+    vendor/st/opensource/halimpl/conf/libnfc-hal-st-744_qrd.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-hal-st-744_qrd.conf
 
 PRODUCT_PACKAGES += $(STM_VENDOR_NFC)
 endif

@@ -54,7 +54,7 @@ extern bool I2cOpenLayer(void* dev, HAL_CALLBACK callb, HALHANDLE* pHandle);
 typedef int (*STEseReset)(void);
 
 const char* halVersion =
-    "ST21NFC AIDL HAL Version 25Q2-BP2A-20250405-Gen-25W14p0";
+    "ST21NFC AIDL HAL Version 25Q2-BP2A-20250727-Mainline-25W31p0";
 
 uint8_t cmd_set_nfc_mode_enable[] = {0x2f, 0x02, 0x02, 0x02, 0x01};
 uint8_t hal_is_closed = 1;
@@ -289,11 +289,13 @@ int StNfc_hal_open(nfc_stack_callback_t* p_cback,
                    nfc_stack_data_callback_t* p_data_cback) {
   bool result = false;
 
+  STLOG_HAL_D("HAL st21nfc: %s halVersion = %s", __func__, halVersion);
   if(checkNfcSecureStatus_HAL()){
+          STLOG_HAL_D("HAL st21nfc: %s NFC PeripheralDynamicProtection Enabled", __func__);
 	  (*p_cback)(HAL_NFC_OPEN_CPLT_EVT, HAL_NFC_STATUS_FAILED);
+          STLOG_HAL_D("HAL st21nfc: %s Failed", __func__);
 	  return -1;
   }
-  STLOG_HAL_D("HAL st21nfc: %s %s", __func__, halVersion);
 
   client_is_nci_10 = false;
 
@@ -444,6 +446,7 @@ int StNfc_hal_close(int nfc_mode_value) {
         int ret = fn();
         STLOG_HAL_D("STReset Result=%d", ret);
       }
+      dlclose(stdll);
     } else {
       STLOG_HAL_D("%s not found, do nothing.", valueStr.c_str());
     }
@@ -595,6 +598,10 @@ void StNfc_hal_getConfig(NfcConfig& config) {
   if (GetNumValue(NAME_T4T_NFCEE_ENABLE, &num, sizeof(num))) {
     config.t4tNfceeEnable = num;
   }
+  // Fallback : use legacy name
+  else if (GetNumValue(NAME_NDEF_NFCEE_ENABLE, &num, sizeof(num))) {
+    config.t4tNfceeEnable = num;
+  }
 }
 
 void StNfc_hal_setLogging(bool enable) {
@@ -605,6 +612,7 @@ void StNfc_hal_setLogging(bool enable) {
   } else {
     hal_trace_level = hal_conf_trace_level;
   }
+  stpropnci_change_log_level(hal_trace_level);
 }
 
 bool StNfc_hal_isLoggingEnabled() { return dbg_logging; }
