@@ -52,7 +52,7 @@ deregisterNfcPhCBFnPtr mDeregisterPhCb = NULL;
 void* mSecureModeContext = NULL;
 
 uint32_t pType = CPeripheralAccessControl_NFC_UID;
-static int phSecureState = 1;
+static int phSecureState = 0;
 static int sync_enable;
 
 volatile phHalStatus_t hal_status;
@@ -117,6 +117,7 @@ uint8_t checkNfcSecureStatus(void)
     NfcSecureState = phSecureState;
   }
 
+  ALOGD("%s: NfcSecureState = %d \n", __func__, NfcSecureState);
   return NfcSecureState;
 }
 

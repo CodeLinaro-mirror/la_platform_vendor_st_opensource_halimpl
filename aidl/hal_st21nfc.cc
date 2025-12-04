@@ -289,11 +289,13 @@ int StNfc_hal_open(nfc_stack_callback_t* p_cback,
                    nfc_stack_data_callback_t* p_data_cback) {
   bool result = false;
 
+  STLOG_HAL_D("HAL st21nfc: %s halVersion = %s", __func__, halVersion);
   if(checkNfcSecureStatus_HAL()){
+          STLOG_HAL_D("HAL st21nfc: %s NFC PeripheralDynamicProtection Enabled", __func__);
 	  (*p_cback)(HAL_NFC_OPEN_CPLT_EVT, HAL_NFC_STATUS_FAILED);
+          STLOG_HAL_D("HAL st21nfc: %s Failed", __func__);
 	  return -1;
   }
-  STLOG_HAL_D("HAL st21nfc: %s %s", __func__, halVersion);
 
   client_is_nci_10 = false;
 
