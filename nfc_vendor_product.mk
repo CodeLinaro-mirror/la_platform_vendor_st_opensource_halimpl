@@ -1,5 +1,5 @@
 # Enable build support for NFC open source vendor modules
-ifeq ($(call is-board-platform-in-list, canoe chora malabar),true)
+ifeq ($(call is-board-platform-in-list, canoe chora malabar shikra),true)
 TARGET_USES_STM_NFC := true
 endif
 
