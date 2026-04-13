@@ -49,7 +49,7 @@ bool stpropnci_init(int loglvl, outgoing_cb_t cb) {
 #define VARIANT "vendor"
 #endif
   LOG_I(
-      "(re)Initializing (version:25Q2-BP2A-20250727-Mainline-25W31p0, "
+      "(re)Initializing (version:25Q2-BP2A-20250727-Mainline-25W31p1_draft, "
       "variant:" VARIANT "), log:%d",
       loglvl);
 
