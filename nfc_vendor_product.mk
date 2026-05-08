@@ -35,8 +35,11 @@ PRODUCT_COPY_FILES += \
     vendor/st/opensource/halimpl/conf/libnfc-hal-st-733_mtp.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-hal-st-733_mtp.conf \
     vendor/st/opensource/halimpl/conf/libnfc-hal-st-733_qrd.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-hal-st-733_qrd.conf \
     vendor/st/opensource/halimpl/conf/libnfc-hal-st-757_mtp.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-hal-st-757_mtp.conf \
-    vendor/st/opensource/halimpl/conf/libnfc-hal-st-757_qrd.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-hal-st-757_qrd.conf
-
+    vendor/st/opensource/halimpl/conf/libnfc-hal-st-757_qrd.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-hal-st-757_qrd.conf \
+    vendor/st/opensource/halimpl/conf/libnfc-hal-st-776_mtp.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-hal-st-776_mtp.conf \
+    vendor/st/opensource/halimpl/conf/libnfc-hal-st-776_qrd.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-hal-st-776_qrd.conf \
+    vendor/st/opensource/halimpl/conf/libnfc-hal-st-777_mtp.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-hal-st-777_mtp.conf \
+    vendor/st/opensource/halimpl/conf/libnfc-hal-st-777_qrd.conf:$(TARGET_COPY_OUT_VENDOR)/etc/libnfc-hal-st-777_qrd.conf
 PRODUCT_PACKAGES += $(STM_VENDOR_NFC)
 endif
 
