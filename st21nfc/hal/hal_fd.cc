@@ -413,7 +413,12 @@ static void hal_fd_load_files() {
   if ((mCustomFileBin = fopen((char*)ConfPath, "r")) != NULL) {
     char conf_line[600];
     uint16_t fwconf_crc = 0;
-    if (fwConfName[strlen(fwConfName) - 1] == 't') {
+    size_t fwConfLen = strlen(fwConfName);
+    if (fwConfLen == 0) {
+      STLOG_HAL_E("configuration file name is empty\n");
+      fclose(mCustomFileBin);
+      mCustomFileBin = NULL;
+    } else if (fwConfName[fwConfLen - 1] == 't') {
       mCustomFileTxt = mCustomFileBin;
       mCustomFileBin = NULL;
       STLOG_HAL_D("text configuration detected\n");
@@ -432,7 +437,7 @@ static void hal_fd_load_files() {
         fclose(mCustomFileTxt);
         mCustomFileTxt = NULL;
       }
-    } else if (fwConfName[strlen(fwConfName) - 1] == 'n') {
+    } else if (fwConfName[fwConfLen - 1] == 'n') {
       int ret = fread(mBinData, sizeof(uint8_t), 2, mCustomFileBin);
       if (ret != 2) {
         STLOG_HAL_E("%s Wrong read nb for CRC\n", __func__);
