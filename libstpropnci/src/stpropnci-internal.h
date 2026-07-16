@@ -174,6 +174,11 @@ extern struct stpropnci_state {
   // Flag indicating observe mode is temporarily suspended.
   bool observe_mode_suspended;
 
+  // Store matching exit frame
+  uint8_t observe_matching_exit_frame[24];
+  int observe_matching_exit_frame_len;
+  uint8_t observe_matching_exit_frame_type;
+
   // flag for sending polling frame notif data
   bool pollingframe_inCE;
 

@@ -1056,6 +1056,8 @@ static bool stpropnci_build_set_exit_frame_cmd(uint8_t *buf, uint16_t *buflen,
   while (remaining_frames) {
     uint8_t qual;
     uint8_t vallen, motiflen;
+    bool has_crc = false;
+    uint8_t *pVal, *pMask;
 
     if (remaining < 2) {
       LOG_E("NCI_ANDROID_SET_PASSIVE_OBSERVER_EXIT_FRAME too short");
@@ -1086,9 +1088,11 @@ static bool stpropnci_build_set_exit_frame_cmd(uint8_t *buf, uint16_t *buflen,
       switch (qual & 0x7) {
         case 0x00:
           crc = iso14443_crc(in + 1, motiflen, Type_A);
+          has_crc = true;
           break;
         case 0x01:
           crc = iso14443_crc(in + 1, motiflen, Type_B);
+          has_crc = true;
           break;
         default:  // no CRC for other modes at the moment.
           break;
@@ -1097,7 +1101,7 @@ static bool stpropnci_build_set_exit_frame_cmd(uint8_t *buf, uint16_t *buflen,
 
     // sanity check, do we have enough space to store this entry in target
     // message ?
-    if ((MAX_NCI_MESSAGE_LEN - (pp - buf)) < (2 + vallen + (crc ? 4 : 0))) {
+    if ((MAX_NCI_MESSAGE_LEN - (pp - buf)) < (2 + vallen + (has_crc ? 4 : 0))) {
       LOG_E(
           "Failing to generate ST_NCI_MSG_PROP_RF_SET_OBSERVE_MODE_EXIT_FRAME "
           "due to CRC overheads, need to adapt the logic to split message");
@@ -1106,18 +1110,22 @@ static bool stpropnci_build_set_exit_frame_cmd(uint8_t *buf, uint16_t *buflen,
 
     // if needed to remap the technologies, we could do it here
     UINT8_TO_STREAM(pp, qual);    // qualifier
-    UINT8_TO_STREAM(pp, vallen);  // len
-    if (crc == 0) {
+    UINT8_TO_STREAM(pp, vallen + (has_crc ? 4 : 0));  // len
+    if (!has_crc) {
+      pVal = pp + 1;
+      pMask = pp + 1 + motiflen;
       // we just copy the power state, data and mask as is.
       ARRAY_TO_STREAM(pp, in, vallen);
       in += vallen;
     } else {
       bool exact = true;
       UINT8_TO_STREAM(pp, *in++);         // power state
+      pVal = pp;
       ARRAY_TO_STREAM(pp, in, motiflen);  // data
       in += motiflen;
       UINT8_TO_STREAM(pp, (uint8_t)(crc & 0xFF));
       UINT8_TO_STREAM(pp, (uint8_t)(crc >> 8));
+      pMask = pp;
       while (motiflen--) {
         if (*in != 0xFF) {
           // At least one byte in the motif has a wildcard, so the CRC will not
@@ -1130,6 +1138,12 @@ static bool stpropnci_build_set_exit_frame_cmd(uint8_t *buf, uint16_t *buflen,
       // exact match
       UINT8_TO_STREAM(pp, exact ? 0xFF : 0x00);
       UINT8_TO_STREAM(pp, exact ? 0xFF : 0x00);
+    }
+    /* Due to FW logic, we need to make sure val bits are 0 if mask bit is 0 */
+    while (pMask < pp) {
+      *pVal &= *pMask;
+      pVal++;
+      pMask++;
     }
 
     remaining_frames--;
@@ -1322,7 +1336,7 @@ static bool stpropnci_cb_set_custom_polling_rsp(
 *******************************************************************************/
 static bool stpropnci_cb_observe_mode_suspend(
     __attribute__((unused)) bool dir_from_upper,
-    __attribute__((unused)) const uint8_t *payload,
+    __attribute__((unused)) const uint8_t* payload,
     __attribute__((unused)) const uint16_t payloadlen,
     __attribute__((unused)) uint8_t mt, __attribute__((unused)) uint8_t gid,
     __attribute__((unused)) uint8_t oid) {
@@ -1331,8 +1345,61 @@ static bool stpropnci_cb_observe_mode_suspend(
         oid == ST_NCI_MSG_PROP_RF_OBSERVE_MODE_SUSPENDED ? "suspended"
                                                          : "resumed");
 
-  // This prop ntf never needs to be forwarded.
-  return true;
+  uint8_t* buf = stpropnci_state.tmpbuff;
+  uint16_t* buflen = stpropnci_state.tmpbufflen;
+  uint8_t *pp = buf, *paylen;
+
+  stpropnci_tmpbuff_reset();
+
+  // build the response to stack
+  NCI_MSG_BLD_HDR0(pp, NCI_MT_NTF, NCI_GID_PROP);
+  NCI_MSG_BLD_HDR1(pp, NCI_MSG_PROP_ANDROID);
+  paylen = pp++;
+  if (oid == ST_NCI_MSG_PROP_RF_OBSERVE_MODE_SUSPENDED) {
+    UINT8_TO_STREAM(pp, NCI_ANDROID_PASSIVE_OBSERVER_SUSPENDED_NTF);
+    UINT8_TO_STREAM(pp, payload[3]);
+    if (payload[4] > 2) {
+      // skip CRC
+      UINT8_TO_STREAM(pp, payload[4] - 2);
+      ARRAY_TO_STREAM(pp, payload + 5, payloadlen - 7);
+    } else {
+      UINT8_TO_STREAM(pp, payload[4]);
+      ARRAY_TO_STREAM(pp, payload + 5, payloadlen - 5);
+    }
+
+    // Store values
+    if ((payload[3] & 0x80) == 0x00) {
+      // Store type
+      stpropnci_state.observe_matching_exit_frame_type = payload[3] & 0x07;
+      if (payload[4] > 2) {
+        // skip CRC
+        stpropnci_state.observe_matching_exit_frame_len = payload[4] - 2;
+        memcpy(stpropnci_state.observe_matching_exit_frame, payload + 5,
+               payloadlen - 7);
+      } else {
+        stpropnci_state.observe_matching_exit_frame_len = payload[4];
+        memcpy(stpropnci_state.observe_matching_exit_frame, payload + 5,
+               payloadlen - 5);
+      }
+    } else {
+      //ICS case
+      stpropnci_state.observe_mode_suspended = true;
+    }
+  } else if (oid == ST_NCI_MSG_PROP_RF_OBSERVE_MODE_RESUMED) {
+    stpropnci_state.observe_mode_suspended = false;
+    stpropnci_state.observe_matching_exit_frame_len = 0;
+    UINT8_TO_STREAM(pp, NCI_ANDROID_PASSIVE_OBSERVER_RESUMED_NTF);
+  } else {
+    // unknown NTF, do nothing
+    return true;
+  }
+
+  // Update the pending fields
+  *paylen = pp - (paylen + 1);
+  *buflen = pp - buf;
+
+  return stpropnci_pump_post(MSG_DIR_TO_STACK, stpropnci_state.tmpbuff,
+                             *stpropnci_state.tmpbufflen, nullptr);
 }
 
 /*******************************************************************************
