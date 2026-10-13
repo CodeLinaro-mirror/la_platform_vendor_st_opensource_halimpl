@@ -651,7 +651,8 @@ bool stpropnci_process_std(bool inform_only, bool dir_from_upper,
 *******************************************************************************/
 static void stpropnci_process_core_reset_ntf(const uint8_t *payload,
                                              const uint16_t payloadlen) {
-  if (payloadlen <= 8) {
+  if ((payloadlen < 8) ||
+      ((payloadlen == 8) && (payload[3] < 0xA0))) {
     LOG_E("CORE_RESET_NTF length too short: %d", payloadlen);
     return;
   }
